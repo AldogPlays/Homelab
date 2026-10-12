@@ -23,6 +23,33 @@ Most devices use eero Wi-Fi; some consoles and TVs are wired to the switch. My d
 
 The current bottleneck is the eero-to-switch connection, which is limited to 1 Gb/s.
 
+## Hardware Gallery
+
+Click a photo to view it larger.
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <a href="assets/photos/gaming-pc-before-truenas.jpg">
+        <img src="assets/photos/gaming-pc-before-truenas.jpg" alt="Original gaming PC with its discrete GPU installed" width="240">
+      </a><br>
+      Gaming PC before TrueNAS, GPU removal, and storage upgrades.
+    </td>
+    <td width="33%" valign="top">
+      <a href="assets/photos/wd-red-plus-6tb-pair.jpg">
+        <img src="assets/photos/wd-red-plus-6tb-pair.jpg" alt="Two boxed WD Red Plus 6 TB hard drives" width="240">
+      </a><br>
+      Two 6 TB WD Red Plus drives for the mirrored pool.
+    </td>
+    <td width="33%" valign="top">
+      <a href="assets/photos/case-during-conversion.jpg">
+        <img src="assets/photos/case-during-conversion.jpg" alt="Disassembled NZXT H710 case during conversion" width="240">
+      </a><br>
+      Case disassembled during the conversion.
+    </td>
+  </tr>
+</table>
+
 ## What I run
 
 | Area | Current services and workflows |
@@ -73,4 +100,4 @@ After that, I want to build or find a router capable of 2.5 Gb/s throughput, pos
 | [Decisions and lessons](docs/decisions-and-lessons.md) | Motivations, tradeoffs, and observed challenges |
 | [Roadmap](docs/roadmap.md) | Planned improvements and unresolved details |
 
-Public diagrams show the layout without private addresses or service mappings. Hardware photos are still to come.
+Public diagrams show the layout without private addresses or service mappings.
