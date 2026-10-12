@@ -4,7 +4,7 @@
 
 ## Current server
 
-A former NZXT BLD gaming PC now runs **TrueNAS SCALE 25.10.4** and hosts the services described in this repository.
+My former NZXT BLD gaming PC now runs **TrueNAS SCALE 25.10.4** and hosts the lab's services.
 
 | Component | Current inventory |
 | --- | --- |
@@ -28,11 +28,11 @@ A former NZXT BLD gaming PC now runs **TrueNAS SCALE 25.10.4** and hosts the ser
 - Removed the MSI GeForce RTX 2070 SUPER VENTUS OC.
 - Cleaned the system and slightly repositioned the existing drive tray to accommodate the drives.
 
-No further server hardware upgrades are currently planned. Hardware photos have not yet been supplied for publication.
+I'm not planning any further server hardware upgrades right now.
 
 ## Storage and recovery
 
-The SSD is the OS/boot drive, and the HDD pair forms the mirrored data pool. Dataset layout, application storage placement, and usable capacity have not been documented yet.
+TrueNAS boots from the SSD. The two HDDs form the mirrored data pool; a breakdown of datasets and application storage is still to come.
 
 **No independent backups or snapshots are currently configured.** Mirroring is redundancy within the same system; it does not provide an independent copy or a history of recoverable versions. Improving recovery is the highest-priority item on the [roadmap](roadmap.md).
 
@@ -47,12 +47,12 @@ The SSD is the OS/boot drive, and the HDD pair forms the mirrored data pool. Dat
 
 Most clients use eero Wi-Fi; some consoles and TVs are wired to the switch. Personal devices generally use the LAN when available and Tailscale otherwise. Some use Tailscale automatically, even at home.
 
-The eero-to-switch connection is reported to be limited to 1 Gb/s. Throughput has not been benchmarked.
+The eero-to-switch connection is limited to 1 Gb/s. I haven't documented throughput measurements yet.
 
-Tailscale Serve provides service URLs and HTTPS where needed and supported. All supplied Serve routes are tailnet-only; one uses HTTP and the others use HTTPS. Exact port-to-service mappings remain unconfirmed and are excluded from public documentation. Subnet routing has not been confirmed.
+Tailscale Serve provides tailnet-only service URLs and HTTPS where needed. One current route uses HTTP. Private addresses and service mappings stay out of this repository.
 
 AdGuard Home is used with Tailscale for personal-device filtering. The eero does not use AdGuard Home as its DNS server, avoiding the family-network interference experienced previously.
 
 ## Planned network changes
 
-A custom router capable of 2.5 Gb/s throughput is planned, with possible reuse of the eero as a wireless access point. A spare older router with 1 GbE ports is available, but no custom router OS has been implemented. Hardware selection, OS choice, and topology for the future refactor are undecided.
+I want to find or build a router capable of 2.5 Gb/s throughput and possibly use the eero only as a wireless access point. I have a spare older router, but its ports are limited to 1 GbE. I haven't chosen the hardware, OS, or layout for the replacement yet.

@@ -2,13 +2,13 @@
 
 [Back to overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Decisions](decisions-and-lessons.md)
 
-Everything below is **planned or unresolved**, not an implemented feature. There are no committed deadlines, and only backup/recovery work has a confirmed priority.
+These are the changes I want to make next. Backups come first; the rest doesn't have a fixed order or timeline.
 
 ## Highest priority: backups and snapshots
 
-Current state: the HDD data pool is mirrored, but there are **no independent backups or snapshots**.
+The HDD pool is mirrored, but I currently have **no independent backups or snapshots**.
 
-The intended improvement is a better backup system and snapshot strategy. Backup destinations, scope, schedules, retention, and recovery procedures have not yet been chosen. Those decisions and evidence of successful recovery should be documented as implementation progresses.
+I need to decide what to back up, where to store it, and how long to keep it. I also want snapshots and a recovery process I can test. I'll document those choices and restore results as I put them in place.
 
 ## Networking
 
@@ -16,21 +16,21 @@ The intended improvement is a better backup system and snapshot strategy. Backup
 - Possibly use the eero solely as a wireless access point.
 - Revisit the broader homelab network design during a future refactor.
 
-The current spare older router has 1 GbE ports. No custom OS installation, router selection, or future topology has been confirmed. Current Serve port-to-service mappings are left unresolved for now.
+My spare older router only has 1 GbE ports, so it doesn't meet the throughput goal. I haven't chosen a replacement or custom OS. Reviewing the current Serve setup can wait until the broader refactor.
 
 ## Services and integrations
 
-- Integrate an *Arr stack into the media workflow; components and deployment details remain undecided.
-- Resume Fidelity integration through SimpleFIN if compatibility returns. This is dependent on external compatibility, not a completed integration.
+- Add an *Arr stack for media; I haven't chosen the components yet.
+- Connect Fidelity through SimpleFIN when compatibility returns.
 
 ## Documentation follow-ups
 
-- Add real hardware photos when available and reviewed for public sharing.
-- Confirm the exact Actual Budget mode name if useful for future documentation.
-- Expand implementation and troubleshooting notes as actual work is completed.
+- Add hardware photos without personal or network details in view.
+- Add the dataset and application storage layout.
+- Record troubleshooting work and what I learned from it.
 
-No additional TrueNAS server hardware upgrades are currently planned.
+I'm not planning more server hardware upgrades right now.
 
 ## Keeping the record accurate
 
-When an improvement is implemented, update the relevant infrastructure or service document and record the decision and observed outcome. Move it out of this roadmap only when it is actually in use. Keep credentials, personal data, network addresses, tailnet identifiers, and internal service mappings out of public changes.
+As I finish changes, I'll update the relevant docs and remove them from this list. Credentials, personal data, private addresses, and internal service mappings stay out of the public repository.

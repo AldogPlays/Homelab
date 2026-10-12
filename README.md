@@ -1,25 +1,12 @@
 # Homelab
 
-My homelab brings everyday services back under my control: photos, files, notes, passwords, media, and personal tools. A repurposed gaming PC running TrueNAS SCALE is the foundation.
+I run my personal cloud on a repurposed gaming PC with TrueNAS SCALE. It holds my photos, files, notes, passwords, and media, along with a few tools I use every day.
 
-I was tired of recurring subscriptions and relying on large companies to hold my important data. I wanted ownership and control over both the data and the services I use. That is what digital sovereignty means to me here.
+I started this because I was tired of recurring subscriptions and trusting large companies with my important data. I wanted to own more of the technology I depend on. For me, that's the point of digital sovereignty.
 
-I do not expect perfect privacy. This is a series of small, practical steps toward reducing how much of my life depends on third-party services and making choices I feel more comfortable with.
+I don't expect perfect privacy, but I can take small steps to reduce tracking and choose where my data lives.
 
-This repository documents the system I actually use, the decisions behind it, and the work still ahead. It also serves as a technical portfolio of my hands-on experience with self-hosting, storage, networking, and systems administration.
-
-## Subscription spending avoided
-
-An approximate comparison using US monthly list prices checked in October 2026, rather than my historical bills. Annual figures assume 12 monthly payments, before tax or discounts.
-
-| Subscription replaced | Homelab alternative | Monthly estimate | Annual estimate |
-| --- | --- | ---: | ---: |
-| Google One 100 GB | Immich and Nextcloud for photo and file workflows | $1.99 | $23.88 |
-| YouTube Music Premium, individual | Navidrome | $11.99 | $143.88 |
-| A couple of streaming services | Jellyfin | Not quantified | Not quantified |
-| **Subtotal of priced subscriptions** | | **$13.98** | **$167.76** |
-
-Price references: [Google One pricing overview](https://www.androidcentral.com/google-one) and [YouTube Music's 2026 US price change](https://9to5google.com/2026/04/10/youtube-premium-us-price-hike/). The streaming services and their tiers have not been specified, so their additional savings are excluded. This is avoided subscription spending, not net savings: electricity, hardware, maintenance, and remaining paid services have not been costed. Self-hosting replaces my workflows, not the providers' entire catalogs or feature sets.
+This repository is my record of the setup, what I've learned, and what I still need to improve. It also shows how I put my interests in networking, storage, and systems administration into practice.
 
 ## Current architecture
 
@@ -34,23 +21,23 @@ flowchart LR
 
 Most devices use eero Wi-Fi; some consoles and TVs are wired to the switch. My devices usually access services over the LAN at home and through Tailscale elsewhere, though some use Tailscale automatically in either location. Tailscale Serve provides private service URLs and HTTPS where needed.
 
-The reported 1 Gb/s bottleneck is the eero-to-switch connection. Addresses and internal service mappings are omitted.
+The current bottleneck is the eero-to-switch connection, which is limited to 1 Gb/s.
 
 ## What I run
 
 | Area | Current services and workflows |
 | --- | --- |
-| Personal data | Nextcloud for files, calendar, contacts, and bookmarks; Immich for automatic photo and video backups from personal devices; Vaultwarden for passwords |
+| Personal data | Nextcloud for files, calendar, contacts, and bookmarks; Immich for automatic photo and video uploads; Vaultwarden for passwords |
 | Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Nextcloud; Actual Budget with SimpleFIN transaction imports |
 | Media | Jellyfin for movies and TV, Audiobookshelf for purchased audiobooks, Navidrome for music |
 | Personal projects | Crafty 4 for a Minecraft server; LubeLogger for truck maintenance, modifications, and fuel |
 | Supporting infrastructure | Tailscale, AdGuard Home, File Browser, and qBittorrent with Gluetun/PIA, Jackett, and FlareSolverr |
 
-The services are used through web interfaces and dedicated clients. Examples include [DAVx5](https://github.com/bitfireAT/davx5-ose) and [floccus](https://github.com/floccusaddon/floccus) with Nextcloud, [Navic](https://github.com/ssalggnikool/Navic) with Navidrome, and [AFinity](https://github.com/MakD/AFinity) with Jellyfin. I also built and use [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android) with my hosted LubeLogger instance.
+I use a mix of web interfaces and dedicated apps, including [DAVx5](https://github.com/bitfireAT/davx5-ose) and [floccus](https://github.com/floccusaddon/floccus) with Nextcloud, [Navic](https://github.com/ssalggnikool/Navic) with Navidrome, and [AFinity](https://github.com/MakD/AFinity) with Jellyfin. I also built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), which I use with my own server.
 
 ## Subscription costs avoided
 
-An illustrative estimate using U.S. monthly prices checked October 12, 2026. The plan tiers below are assumptions, not a record of my former bills.
+These are the subscriptions I've replaced. The estimate uses U.S. monthly prices checked October 12, 2026, with assumed tiers rather than my old bills.
 
 | Subscription dropped | Assumed plan | Monthly | Annualized |
 | --- | --- | ---: | ---: |
@@ -60,14 +47,14 @@ An illustrative estimate using U.S. monthly prices checked October 12, 2026. The
 | [Disney+](https://9to5google.com/2026/09/23/disney-plus-price-hike-september-2026/) | With ads, new-subscriber rate | $12.49 | $149.88 |
 | **Estimated spending avoided** | | **$35.46** | **$425.52** |
 
-Annualized amounts are monthly prices multiplied by 12. This excludes taxes, discounts, hardware, electricity, maintenance, and remaining paid services such as PIA and SimpleFIN. It is not a net-savings calculation or a claim that self-hosted libraries offer the same catalogs as streaming subscriptions.
+The annual figures are 12 monthly payments. These are avoided subscription costs, before tax, discounts, and the cost of running the lab. PIA and SimpleFIN are still part of my setup. My own media library also differs from a streaming service's catalog.
 
-## Decisions worth exploring
+## Why it's set up this way
 
 - **Reuse existing hardware:** upgraded the former gaming PC's memory and storage, added a 2.5 GbE NIC, and removed its discrete GPU.
 - **Separate storage roles:** a dedicated SSD boots TrueNAS; two 6 TB HDDs form a mirrored data pool.
 - **Keep filtering personal:** AdGuard Home is used with Tailscale for my devices after network-wide DNS filtering interfered with family use.
-- **Connect services to daily workflows:** self-hosted services replace Google Photos, YouTube Music, Audible, and other cloud-dependent workflows.
+- **Make it useful every day:** the lab replaces Google Photos, YouTube Music, Audible, and other services I used to rely on.
 
 See [decisions and lessons](docs/decisions-and-lessons.md) for the reasoning and tradeoffs.
 
@@ -75,7 +62,7 @@ See [decisions and lessons](docs/decisions-and-lessons.md) for the reasoning and
 
 **There are currently no independent backups or snapshots.** The HDD mirror provides disk redundancy, not a separate recoverable copy of my data. A backup system and snapshot strategy are the highest-priority planned improvements. Device uploads to Immich do not provide an independent backup of the server.
 
-Other planned work includes a router capable of 2.5 Gb/s throughput, a possible transition of the eero to access-point use, an *Arr stack, and a broader networking refactor. These are plans, not implemented features.
+After that, I want to build or find a router capable of 2.5 Gb/s throughput, possibly keep the eero for Wi-Fi, and add an *Arr stack. A broader networking refactor is also on the [roadmap](docs/roadmap.md).
 
 ## Documentation
 
@@ -86,4 +73,4 @@ Other planned work includes a router capable of 2.5 Gb/s throughput, a possible 
 | [Decisions and lessons](docs/decisions-and-lessons.md) | Motivations, tradeoffs, and observed challenges |
 | [Roadmap](docs/roadmap.md) | Planned improvements and unresolved details |
 
-This baseline reflects the initial inventory. Real hardware photos can be added when available; no personal screenshots or fabricated hardware images are included.
+Public diagrams show the layout without private addresses or service mappings. Hardware photos are still to come.
