@@ -4,11 +4,11 @@
 
 ## Ownership through everyday use
 
-This lab is part of my daily routine. Immich replaced Google Photos, Navidrome replaced YouTube Music, and Audiobookshelf lets me listen to my purchased books outside Audible. Nextcloud holds my files and personal information, and Vaultwarden got me using a password manager for the first time.
+This lab is part of my daily routine. [Immich](https://immich.app/) replaced Google Photos, [Navidrome](https://www.navidrome.org/) replaced YouTube Music, and [Audiobookshelf](https://audiobookshelf.org/) lets me listen to my purchased books outside Audible. [Nextcloud](https://nextcloud.com/) holds my files and personal information, and [Vaultwarden](https://github.com/dani-garcia/vaultwarden) got me using a password manager for the first time.
 
 I started moving these services home because I was tired of subscriptions and uncomfortable trusting large companies with so much of my data.
 
-Self-hosting doesn't give me complete privacy. It does let me choose where more of my data lives and reduce my reliance on third parties. I still use services like SimpleFIN and PIA where they make sense for me.
+Self-hosting doesn't give me complete privacy. It does let me choose where more of my data lives and reduce my reliance on third parties. I still use services like [SimpleFIN](https://bridge.simplefin.org/) and [PIA](https://www.privateinternetaccess.com/) where they make sense for me.
 
 The tradeoff is that maintenance and recovery are now my responsibility. Backups are the biggest gap I need to address.
 
@@ -24,7 +24,7 @@ The two WD Red Plus drives are mirrored, with the OS on a separate SSD. The mirr
 
 ## Personal filtering without disrupting the household
 
-I originally used AdGuard Home for the household network, but it interfered with services my family used. Now I use it with Tailscale for my own devices, and the eero doesn't use it as its DNS server.
+I originally used [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) for the household network, but it interfered with services my family used. Now I use it with [Tailscale](https://tailscale.com/) for my own devices, and the eero doesn't use it as its DNS server.
 
 I can reduce tracking and block sites that encourage habits I'm trying to avoid without making those choices for everyone else. That experience taught me to think about who a network change affects before applying it.
 

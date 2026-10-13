@@ -1,6 +1,6 @@
 # Homelab
 
-I run my personal cloud on a repurposed gaming PC with TrueNAS SCALE. It holds my photos, files, notes, passwords, and media, along with a few tools I use every day.
+I run my personal cloud on a repurposed gaming PC with [TrueNAS SCALE](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media, along with a few tools I use every day.
 
 I started this because I was tired of recurring subscriptions and trusting large companies with my important data. I wanted to own more of the technology I depend on. For me, that's the point of digital sovereignty.
 
@@ -19,7 +19,7 @@ flowchart LR
     Switch --- Host["Repurposed PC<br/>TrueNAS SCALE 25.10.4<br/>2.5 GbE NIC"]
 ```
 
-Most devices use eero Wi-Fi; some consoles and TVs are wired to the switch. My devices usually access services over the LAN at home and through Tailscale elsewhere, though some use Tailscale automatically in either location. Tailscale Serve provides private service URLs and HTTPS where needed.
+Most devices use eero Wi-Fi; some consoles and TVs are wired to the switch. My devices usually access services over the LAN at home and through Tailscale elsewhere, though some use Tailscale automatically in either location. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) provides private service URLs and HTTPS where needed.
 
 The current bottleneck is the eero-to-switch connection, which is limited to 1 Gb/s.
 
@@ -54,11 +54,11 @@ Click a photo to view it larger.
 
 | Area | Current services and workflows |
 | --- | --- |
-| Personal data | Nextcloud for files, calendar, contacts, and bookmarks; Immich for automatic photo and video uploads; Vaultwarden for passwords |
-| Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Nextcloud; Actual Budget with SimpleFIN transaction imports |
-| Media | Jellyfin for movies and TV, Audiobookshelf for purchased audiobooks, Navidrome for music |
-| Personal projects | Crafty 4 for a Minecraft server; LubeLogger for truck maintenance, modifications, and fuel |
-| Supporting infrastructure | Tailscale, AdGuard Home, File Browser, and qBittorrent with Gluetun/PIA, Jackett, and FlareSolverr |
+| Personal data | [Nextcloud](https://nextcloud.com/) for files, calendar, contacts, and bookmarks; [Immich](https://immich.app/) for automatic photo and video uploads; [Vaultwarden](https://github.com/dani-garcia/vaultwarden) for passwords |
+| Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Nextcloud; [Actual Budget](https://actualbudget.org/) with [SimpleFIN](https://bridge.simplefin.org/) transaction imports |
+| Media | [Jellyfin](https://jellyfin.org/) for movies and TV, [Audiobookshelf](https://audiobookshelf.org/) for purchased audiobooks, [Navidrome](https://www.navidrome.org/) for music |
+| Personal projects | [Crafty 4](https://craftycontrol.com/) for a Minecraft server; [LubeLogger](https://lubelogger.com/) for truck maintenance, modifications, and fuel |
+| Supporting infrastructure | [Tailscale](https://tailscale.com/), [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome), [File Browser](https://github.com/filebrowser/filebrowser), and [qBittorrent](https://www.qbittorrent.org/) with [Gluetun](https://github.com/passteque/gluetun)/[PIA](https://www.privateinternetaccess.com/), [Jackett](https://github.com/Jackett/Jackett), and [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) |
 
 I use a mix of web interfaces and dedicated apps, including [DAVx5](https://github.com/bitfireAT/davx5-ose) and [floccus](https://github.com/floccusaddon/floccus) with Nextcloud, [Navic](https://github.com/ssalggnikool/Navic) with Navidrome, and [AFinity](https://github.com/MakD/AFinity) with Jellyfin. I also built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), which I use with my own server.
 

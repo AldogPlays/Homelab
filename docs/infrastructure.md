@@ -4,7 +4,7 @@
 
 ## Current server
 
-My former NZXT BLD gaming PC now runs **TrueNAS SCALE 25.10.4** and hosts the lab's services.
+My former NZXT BLD gaming PC now runs **[TrueNAS SCALE](https://www.truenas.com/truenas-community-edition/) 25.10.4** and hosts the lab's services.
 
 | Component | Current inventory |
 | --- | --- |
@@ -49,9 +49,9 @@ Most clients use eero Wi-Fi; some consoles and TVs are wired to the switch. Pers
 
 The eero-to-switch connection is limited to 1 Gb/s. I haven't documented throughput measurements yet.
 
-Tailscale Serve provides tailnet-only service URLs and HTTPS where needed. One current route uses HTTP. Private addresses and service mappings stay out of this repository.
+[Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) provides tailnet-only service URLs and HTTPS where needed. One current route uses HTTP. Private addresses and service mappings stay out of this repository.
 
-AdGuard Home is used with Tailscale for personal-device filtering. The eero does not use AdGuard Home as its DNS server, avoiding the family-network interference experienced previously.
+[AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) is used with Tailscale for personal-device filtering. The eero does not use AdGuard Home as its DNS server, avoiding the family-network interference experienced previously.
 
 ## Planned network changes
 

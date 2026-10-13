@@ -21,7 +21,7 @@ My spare older router only has 1 GbE ports, so it doesn't meet the throughput go
 ## Services and integrations
 
 - Add an *Arr stack for media; I haven't chosen the components yet.
-- Connect Fidelity through SimpleFIN when compatibility returns.
+- Connect Fidelity through [SimpleFIN](https://bridge.simplefin.org/) when compatibility returns.
 
 ## Documentation follow-ups
 
