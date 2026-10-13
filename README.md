@@ -55,26 +55,12 @@ Click a photo to view it larger.
 | Area | Current services and workflows |
 | --- | --- |
 | Personal data | [Nextcloud](https://nextcloud.com/) for files, calendar, contacts, and bookmarks; [Immich](https://immich.app/) for automatic photo and video uploads; [Vaultwarden](https://github.com/dani-garcia/vaultwarden) for passwords |
-| Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Nextcloud; [Actual Budget](https://actualbudget.org/) with [SimpleFIN](https://bridge.simplefin.org/) transaction imports |
+| Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Nextcloud; [Actual Budget](https://actualbudget.org/) with SimpleFIN transaction imports |
 | Media | [Jellyfin](https://jellyfin.org/) for movies and TV, [Audiobookshelf](https://audiobookshelf.org/) for purchased audiobooks, [Navidrome](https://www.navidrome.org/) for music |
 | Personal projects | [Crafty 4](https://craftycontrol.com/) for a Minecraft server; [LubeLogger](https://lubelogger.com/) for truck maintenance, modifications, and fuel |
-| Supporting infrastructure | [Tailscale](https://tailscale.com/), [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome), [File Browser](https://github.com/filebrowser/filebrowser), and [qBittorrent](https://www.qbittorrent.org/) with [Gluetun](https://github.com/passteque/gluetun)/[PIA](https://www.privateinternetaccess.com/), [Jackett](https://github.com/Jackett/Jackett), and [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) |
+| Supporting infrastructure | [Tailscale](https://tailscale.com/), [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome), [File Browser](https://github.com/filebrowser/filebrowser), and [qBittorrent](https://www.qbittorrent.org/) with Gluetun/PIA, Jackett, and FlareSolverr |
 
 I use a mix of web interfaces and dedicated apps, including [DAVx5](https://github.com/bitfireAT/davx5-ose) and [floccus](https://github.com/floccusaddon/floccus) with Nextcloud, [Navic](https://github.com/ssalggnikool/Navic) with Navidrome, and [AFinity](https://github.com/MakD/AFinity) with Jellyfin. I also built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), which I use with my own server.
-
-## Subscription costs avoided
-
-These are the subscriptions I've replaced. The estimate uses U.S. monthly prices checked October 12, 2026, with assumed tiers rather than my old bills.
-
-| Subscription dropped | Assumed plan | Monthly | Annualized |
-| --- | --- | ---: | ---: |
-| [Google One](https://one.google.com/about/plans?g1_landing_page=1&g1_last_touchpoint=39) | 100 GB | $1.99 | $23.88 |
-| [YouTube Music Premium](https://www.musicbusinessworldwide.com/youtube-hikes-us-subscription-prices-across-premium-and-music-plans/) | Individual | $11.99 | $143.88 |
-| [Netflix](https://www.netflix.com/browse/genre/81701343) | Standard with ads | $8.99 | $107.88 |
-| [Disney+](https://9to5google.com/2026/09/23/disney-plus-price-hike-september-2026/) | With ads, new-subscriber rate | $12.49 | $149.88 |
-| **Estimated spending avoided** | | **$35.46** | **$425.52** |
-
-The annual figures are 12 monthly payments. These are avoided subscription costs, before tax, discounts, and the cost of running the lab. PIA and SimpleFIN are still part of my setup. My own media library also differs from a streaming service's catalog.
 
 ## Why it's set up this way
 
@@ -90,6 +76,20 @@ See [decisions and lessons](docs/decisions-and-lessons.md) for the reasoning and
 **There are currently no independent backups or snapshots.** The HDD mirror provides disk redundancy, not a separate recoverable copy of my data. A backup system and snapshot strategy are the highest-priority planned improvements. Device uploads to Immich do not provide an independent backup of the server.
 
 After that, I want to build or find a router capable of 2.5 Gb/s throughput, possibly keep the eero for Wi-Fi, and add an *Arr stack. A broader networking refactor is also on the [roadmap](docs/roadmap.md).
+
+## Subscription costs avoided
+
+These are the subscriptions I've replaced. The estimate uses U.S. monthly prices checked October 12, 2026, with assumed tiers rather than my old bills.
+
+| Subscription dropped | Assumed plan | Monthly | Annualized |
+| --- | --- | ---: | ---: |
+| Google One | 100 GB | $1.99 | $23.88 |
+| YouTube Music Premium | Individual | $11.99 | $143.88 |
+| Netflix | Standard with ads | $8.99 | $107.88 |
+| Disney+ | With ads, new-subscriber rate | $12.49 | $149.88 |
+| **Estimated spending avoided** | | **$35.46** | **$425.52** |
+
+The annual figures are 12 monthly payments. These are avoided subscription costs, before tax, discounts, and the cost of running the lab. PIA and SimpleFIN are still part of my setup. My own media library also differs from a streaming service's catalog.
 
 ## Documentation
 
