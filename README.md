@@ -97,6 +97,7 @@ The annual figures are 12 monthly payments. These are avoided subscription costs
 | --- | --- |
 | [Infrastructure](docs/infrastructure.md) | Hardware, storage, platform, and current networking |
 | [Services and clients](docs/services.md) | Service purposes, deployment, Android clients, and integrations |
+| [Local AI](docs/local-ai.md) | Local model setup notes and benchmark results |
 | [Decisions and lessons](docs/decisions-and-lessons.md) | Motivations, tradeoffs, and observed challenges |
 | [Roadmap](docs/roadmap.md) | Planned improvements and unresolved details |
 
