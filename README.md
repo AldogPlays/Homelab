@@ -2,11 +2,7 @@
 
 I run my personal cloud on a repurposed gaming PC with [TrueNAS SCALE](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media, along with a few tools I use every day.
 
-I started this because I was tired of recurring subscriptions and trusting large companies with my important data. I wanted to own more of the technology I depend on. For me, that's the point of digital sovereignty.
-
-I don't expect perfect privacy, but I can take small steps to reduce tracking and choose where my data lives.
-
-This repository is my record of the setup, what I've learned, and what I still need to improve. It also shows how I put my interests in networking, storage, and systems administration into practice.
+I started this to replace recurring subscriptions and have more control over my data. This repository records the setup, the decisions behind it, and the things I still need to improve.
 
 ## Current architecture
 
@@ -23,7 +19,7 @@ Most devices use eero Wi-Fi; some consoles and TVs are wired to the switch. My d
 
 The current bottleneck is the eero-to-switch connection, which is limited to 1 Gb/s.
 
-## Hardware Gallery
+## Hardware gallery
 
 Click a photo to view it larger.
 
