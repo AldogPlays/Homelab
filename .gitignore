@@ -1,0 +1,90 @@
+# Environment files, including backups and local variants.
+.env
+.env.*
+*.env
+*.env.*
+.envrc
+
+# Commit example files only with placeholder values, never real secrets.
+!.env.example
+!*.env.example
+
+# Secret files and directories (at any depth).
+secrets/
+.secrets/
+credentials/
+.credentials/
+secret
+secret.*
+secrets.*
+credentials
+credentials.*
+*.secret
+*.secrets
+*.credentials
+password
+password.*
+passwords
+passwords.*
+token
+token.*
+tokens
+tokens.*
+*.token
+*.tokens
+api_key
+api_key.*
+api-key
+api-key.*
+
+# Private keys, certificate bundles, and authentication stores.
+*.key
+*.pem
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+.ssh/
+.aws/
+.azure/
+.kube/
+.docker/
+.git-credentials
+.netrc
+.npmrc
+.pypirc
+.htpasswd
+.htpasswd.*
+
+# Runtime data belongs outside this repository.
+/appdata/
+/Apps/
+/data/
+backups/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.sql
+*.sql.gz
+*.dump
+*.log
+logs/
+
+# Local editor and operating-system files.
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Ignore rules cannot detect secrets embedded in otherwise tracked files.
+# Review each explicit file and its diff before staging or committing.

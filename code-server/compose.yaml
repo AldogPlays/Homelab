@@ -1,0 +1,20 @@
+services:
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    restart: unless-stopped
+
+    env_file:
+      - /mnt/tank/appdata/code-server/auth.env
+
+    environment:
+      PUID: "3000"
+      PGID: "3001"
+      TZ: "America/Los_Angeles"
+      DEFAULT_WORKSPACE: /workspace
+
+    ports:
+      - "10.10.10.10:32443:8443"
+
+    volumes:
+      - /mnt/tank/appdata/code-server:/config
+      - /mnt/tank/stacks:/workspace
