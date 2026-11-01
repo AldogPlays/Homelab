@@ -26,11 +26,11 @@ My spare older router only has 1 GbE ports, so it doesn't meet the throughput go
 ## Documentation follow-ups
 
 - Add hardware photos without personal or network details in view.
-- Add the dataset and application storage layout.
+- Expand the documented storage paths into a full dataset and application storage layout.
 - Record troubleshooting work and what I learned from it.
 
 I'm not planning more server hardware upgrades right now.
 
 ## Keeping the record accurate
 
-As I finish changes, I'll update the relevant docs and remove them from this list. Credentials, personal data, private addresses, and internal service mappings stay out of the public repository.
+As I finish changes, I'll update the relevant docs and remove them from this list. Credentials, personal data, and runtime state stay out of the public repository. Compose configurations include internal addresses and service mappings.

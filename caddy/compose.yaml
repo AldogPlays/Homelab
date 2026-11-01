@@ -1,0 +1,12 @@
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+
+    ports:
+      - "10.10.10.10:443:443"
+
+    volumes:
+      - /mnt/tank/stacks/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /mnt/tank/appdata/caddy/data:/data
+      - /mnt/tank/appdata/caddy/config:/config

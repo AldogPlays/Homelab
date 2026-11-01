@@ -4,9 +4,36 @@
 
 ## Deployment and access
 
-I manage all 15 hosted services through **[TrueNAS Apps](https://www.truenas.com/docs/scale/25.10/scaleuireference/apps/)**. qBittorrent is a custom YAML deployment with **[Gluetun](https://github.com/passteque/gluetun)** and **[Private Internet Access (PIA)](https://www.privateinternetaccess.com/)**.
+TrueNAS Apps manages hosted services. This repository contains Compose source configurations for code-server, qBittorrent with Gluetun/PIA, SearXNG, and Caddy. Repository configuration alone does not establish which version is deployed or the current service count.
 
-Personal devices generally use LAN access when available and Tailscale otherwise; some use Tailscale automatically. Tailscale runs on TrueNAS and client devices, with [Serve](https://tailscale.com/docs/features/tailscale-serve) providing private URLs and HTTPS where needed. Addresses and internal service mappings are omitted.
+Personal devices generally use LAN access when available and Tailscale otherwise; some use Tailscale automatically. Tailscale runs on TrueNAS and client devices, with [Serve](https://tailscale.com/docs/features/tailscale-serve) providing private URLs and HTTPS where needed. Compose configurations include internal addresses and service mappings. Credentials and runtime state remain outside Git.
+
+## Repository-managed configuration
+
+| Source | Configuration prerequisites |
+| --- | --- |
+| [code-server](../code-server/compose.yaml) | External authentication file at `/mnt/tank/appdata/code-server/auth.env`; host stacks mounted at `/workspace` |
+| [qBittorrent and Gluetun](../qbittorrent/compose.yaml) | External PIA credentials at `/mnt/tank/appdata/qbittorrent/pia.env`; application state and torrent data outside Git |
+| [SearXNG](../searxng/compose.yaml) | Configuration and cache under `/mnt/tank/appdata/searxng`; do not commit live settings or secret keys |
+| [Caddy](../caddy/compose.yaml) and [Caddyfile](../caddy/Caddyfile) | Local DNS for `test.home.arpa`, `code.home.arpa`, `search.home.arpa`, and `torrents.home.arpa`; clients must trust Caddy's internal CA for HTTPS. CA private keys and runtime storage remain outside Git |
+
+### Caddy and SearXNG access
+
+Caddy serves a test response at `test.home.arpa` and proxies `code.home.arpa`, `search.home.arpa`, and `torrents.home.arpa` to HTTP ports `32443`, `34053`, and `33080` respectively on `10.10.10.10`. All four sites use `tls internal`. Resolve these names to the host address and distribute only the CA public certificate to clients; keep the CA private key in external runtime storage.
+
+The Caddy Compose file publishes TCP port 443 only. Use explicit HTTPS URLs: host port 80 is not published for HTTP redirects, and UDP port 443 is not published for HTTP/3. Verify port availability before deployment. The backend ports remain directly published; Caddy adds no authentication. SearXNG settings, secret key, public base URL, and proxy behavior must be checked in its external configuration without copying that file into Git.
+
+### qBittorrent networking review
+
+qBittorrent shares Gluetun's network namespace. The Web UI is published on `10.10.10.10:33080`; `FIREWALL_INPUT_PORTS` permits that port on Gluetun's default interface. PIA port forwarding separately supplies the torrent listening port. The up/down hooks call the qBittorrent API at `127.0.0.1:33080`, setting the torrent interface to the VPN interface on forwarding startup and to loopback on teardown.
+
+The current Compose configuration removes the previous `FIREWALL_OUTBOUND_SUBNETS: 192.168.4.124/32` exception. The loopback hooks do not require it. Before deploying this change, check whether search integrations, proxies, notifications, or other application settings still depend on that address; its original purpose is unverified. Do not replace it with a broad LAN allowance. See [Gluetun firewall options](https://github.com/qdm12/gluetun-wiki/blob/main/setup/options/firewall.md).
+
+The current hooks follow [Gluetun's qBittorrent example](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/vpn-port-forwarding.md) and require localhost authentication bypass. This grants API access to processes in the shared network namespace. Runtime authentication settings have not been verified. Require authentication for LAN clients, avoid subnet-wide bypass, and retain CSRF and host-header protections. Do not disable localhost bypass independently of replacing and testing the hooks with authenticated requests. Keep any hook credentials and session cookies outside Git and out of command output.
+
+The Caddyfile defines `https://torrents.home.arpa` with an HTTP upstream at `10.10.10.10:33080`. Client HTTPS requires local DNS and trust in Caddy's internal CA; it does not encrypt the upstream connection or remove direct access to the published Web UI port. Runtime Web UI settings and proxy compatibility remain unverified. Verify the active VPN interface, hook success, and forwarding recovery on a later approved deployment; the hooks do not replace Gluetun's firewall protection.
+
+Changing the environment requires recreating Gluetun through the existing deployment mechanism; a plain container restart does not apply Compose environment changes. Coordinate qBittorrent recreation with Gluetun because it shares that namespace. This interrupts downloads. Repository edits alone do not change the running application.
 
 ## Current services
 

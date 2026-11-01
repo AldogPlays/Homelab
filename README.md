@@ -87,6 +87,12 @@ These are the subscriptions I've replaced. The estimate uses U.S. monthly prices
 
 The annual figures are 12 monthly payments. These are avoided subscription costs, before tax, discounts, and the cost of running the lab. PIA and SimpleFIN are still part of my setup. My own media library also differs from a streaming service's catalog.
 
+## Repository configuration
+
+Compose source files live in `<app>/compose.yaml`, under `/workspace` in code-server and `/mnt/tank/stacks` on the host. The repository contains configurations for code-server, qBittorrent with Gluetun, SearXNG, and Caddy; their presence does not verify the running deployment.
+
+Runtime state and secrets belong in `/mnt/tank/appdata`; user data belongs in `/mnt/tank/data`. Neither belongs in Git. Compose configurations include internal addresses and service mappings. See [Services](docs/services.md) for configuration prerequisites and outstanding checks.
+
 ## Documentation
 
 | Document | What it covers |

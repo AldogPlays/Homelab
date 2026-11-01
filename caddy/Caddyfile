@@ -1,0 +1,23 @@
+test.home.arpa {
+    tls internal
+
+    respond "Hermes Private HTTPS is working!" 200
+}
+
+code.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:32443
+}
+
+search.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:34053
+}
+
+torrents.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:33080
+}

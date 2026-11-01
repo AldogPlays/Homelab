@@ -1,0 +1,65 @@
+services:
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    restart: unless-stopped
+
+    cap_add:
+      - NET_ADMIN
+
+    devices:
+      - /dev/net/tun:/dev/net/tun
+
+    env_file:
+      - /mnt/tank/appdata/qbittorrent/pia.env
+
+    environment:
+      TZ: America/Los_Angeles
+      VPN_SERVICE_PROVIDER: private internet access
+      VPN_TYPE: openvpn
+      OPENVPN_PROTOCOL: udp
+      PRIVATE_INTERNET_ACCESS_OPENVPN_ENCRYPTION_PRESET: strong
+
+      SERVER_REGIONS: CA Toronto,CA Montreal,CA Vancouver,CA Ontario
+
+      PORT_FORWARD_ONLY: "true"
+      VPN_PORT_FORWARDING: "on"
+
+      FIREWALL_INPUT_PORTS: "33080"
+
+      VPN_PORT_FORWARDING_UP_COMMAND: >-
+        /bin/sh -c 'wget -O- -nv
+        --retry-connrefused --post-data
+        "json={\"listen_port\":{{PORT}},\"current_network_interface\":\"{{VPN_INTERFACE}}\",\"random_port\":false,\"upnp\":false}"
+        http://127.0.0.1:33080/api/v2/app/setPreferences'
+
+      VPN_PORT_FORWARDING_DOWN_COMMAND: >-
+        /bin/sh -c 'wget -O- -nv
+        --retry-connrefused --post-data
+        "json={\"listen_port\":0,\"current_network_interface\":\"lo\"}"
+        http://127.0.0.1:33080/api/v2/app/setPreferences'
+
+    ports:
+      - "10.10.10.10:33080:33080/tcp"
+
+    volumes:
+      - /mnt/tank/appdata/qbittorrent/gluetun:/gluetun
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    restart: unless-stopped
+
+    depends_on:
+      - gluetun
+
+    network_mode: service:gluetun
+
+    environment:
+      PUID: "568"
+      PGID: "568"
+      UMASK: "002"
+      TZ: America/Los_Angeles
+      WEBUI_PORT: "33080"
+
+    volumes:
+      - /mnt/tank/appdata/qbittorrent/config:/config
+      - /mnt/tank/data/media/torrents:/data/torrents

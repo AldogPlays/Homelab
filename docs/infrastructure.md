@@ -32,7 +32,7 @@ I'm not planning any further server hardware upgrades right now.
 
 ## Storage and recovery
 
-TrueNAS boots from the SSD. The two HDDs form the mirrored data pool; a breakdown of datasets and application storage is still to come.
+TrueNAS boots from the SSD. The two HDDs form the mirrored data pool. Compose source files are stored in `/mnt/tank/stacks` on the host, mounted at `/workspace` in code-server. Runtime state and secrets live in `/mnt/tank/appdata`; user data lives in `/mnt/tank/data`. Runtime state, secrets, and user data must never be committed.
 
 **No independent backups or snapshots are currently configured.** Mirroring is redundancy within the same system; it does not provide an independent copy or a history of recoverable versions. Improving recovery is the highest-priority item on the [roadmap](roadmap.md).
 
@@ -49,7 +49,7 @@ Most clients use eero Wi-Fi; some consoles and TVs are wired to the switch. Pers
 
 The eero-to-switch connection is limited to 1 Gb/s. I haven't documented throughput measurements yet.
 
-[Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) provides tailnet-only service URLs and HTTPS where needed. One current route uses HTTP. Private addresses and service mappings stay out of this repository.
+[Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) provides tailnet-only service URLs and HTTPS where needed. One current route uses HTTP. Compose configurations include internal addresses and service mappings. Credentials and runtime state remain outside Git. The repository also includes a Caddy configuration for local HTTPS; its DNS and client trust prerequisites are documented in [Services](services.md).
 
 [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) is used with Tailscale for personal-device filtering. The eero does not use AdGuard Home as its DNS server, avoiding the family-network interference experienced previously.
 
