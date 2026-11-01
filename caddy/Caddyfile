@@ -16,8 +16,14 @@ search.home.arpa {
     reverse_proxy http://10.10.10.10:34053
 }
 
-torrents.home.arpa {
+torrent.home.arpa {
     tls internal
 
     reverse_proxy http://10.10.10.10:33080
+}
+
+budget.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:31012
 }

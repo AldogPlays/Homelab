@@ -1,0 +1,12 @@
+services:
+  actual-budget:
+    image: ghcr.io/actualbudget/actual-server:26.10.0@sha256:24645e971da6bb1a1f953d6859e307a0b29be1e8b4130a35b3220c209b5b860c
+    restart: unless-stopped
+
+    user: "568:568"
+
+    ports:
+      - "10.10.10.10:31012:5006"
+
+    volumes:
+      - /mnt/tank/appdata/actual-budget:/data
