@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:18.6-trixie
+    restart: unless-stopped
+    user: "999:999"
+    group_add:
+      - "568"
+
+    env_file:
+      - path: /mnt/tank/appdata/vaultwarden/postgres.env
+        format: raw
+
+    volumes:
+      - /mnt/tank/appdata/vaultwarden/db:/var/lib/postgresql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  vaultwarden:
+    image: ghcr.io/dani-garcia/vaultwarden:1.37.4
+    restart: unless-stopped
+    user: "568:568"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    env_file:
+      - path: /mnt/tank/appdata/vaultwarden/vaultwarden.env
+        format: raw
+
+    ports:
+      - "30032:30032"
+
+    volumes:
+      - /mnt/tank/appdata/vaultwarden/config:/data

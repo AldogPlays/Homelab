@@ -69,3 +69,9 @@ crafty-4.home.arpa {
         }
     }
 }
+
+vaultwarden.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:30032
+}

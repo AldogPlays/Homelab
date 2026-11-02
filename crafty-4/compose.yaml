@@ -1,0 +1,17 @@
+services:
+  crafty-4:
+    image: arcadiatechnology/crafty-4:4.11.0
+    restart: unless-stopped
+    user: "1000:1000"
+
+    ports:
+      - "30146:8443"
+      - "8100:8100"
+      - "25500-25600:25500-25600/tcp"
+
+    volumes:
+      - /mnt/tank/appdata/crafty-4/config:/crafty/app/config
+      - /mnt/tank/appdata/crafty-4/backups:/crafty/backups
+      - /mnt/tank/appdata/crafty-4/import:/crafty/import
+      - /mnt/tank/appdata/crafty-4/logs:/crafty/logs
+      - /mnt/tank/appdata/crafty-4/servers:/crafty/servers
