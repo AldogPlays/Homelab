@@ -39,3 +39,15 @@ navidrome.home.arpa {
 
     reverse_proxy http://10.10.10.10:30043
 }
+
+jellyfin.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:30013
+}
+
+lubelogger.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:30035
+}
