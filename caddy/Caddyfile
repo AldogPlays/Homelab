@@ -51,3 +51,21 @@ lubelogger.home.arpa {
 
     reverse_proxy http://10.10.10.10:30035
 }
+
+joplin.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:30106
+}
+
+crafty-4.home.arpa {
+    tls internal
+
+    reverse_proxy https://10.10.10.10:30146 {
+        header_up Host {hostport}
+
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}
