@@ -33,3 +33,9 @@ audiobookshelf.home.arpa {
 
     reverse_proxy http://10.10.10.10:30067
 }
+
+navidrome.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:30043
+}

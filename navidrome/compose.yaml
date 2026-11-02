@@ -1,0 +1,18 @@
+services:
+  navidrome:
+    image: ghcr.io/navidrome/navidrome:0.64.2@sha256:38dc2727bfcfd5ede290f8ada114fc90368146f265ae4701ddddbcbe2a44ee52
+    restart: unless-stopped
+
+    user: "568:568"
+
+    environment:
+      TZ: America/Los_Angeles
+      ND_PORT: "4533"
+      ND_MUSICFOLDER: /music
+
+    ports:
+      - "10.10.10.10:30043:4533"
+
+    volumes:
+      - /mnt/tank/appdata/navidrome:/data
+      - /mnt/tank/data/media/music:/music:ro
