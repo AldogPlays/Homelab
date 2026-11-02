@@ -4,26 +4,32 @@ test.home.arpa {
     respond "Hermes Private HTTPS is working!" 200
 }
 
-code.home.arpa {
+code-server.home.arpa {
     tls internal
 
     reverse_proxy http://10.10.10.10:32443
 }
 
-search.home.arpa {
+searxng.home.arpa {
     tls internal
 
     reverse_proxy http://10.10.10.10:34053
 }
 
-torrent.home.arpa {
+qbittorrent.home.arpa {
     tls internal
 
     reverse_proxy http://10.10.10.10:33080
 }
 
-budget.home.arpa {
+actual-budget.home.arpa {
     tls internal
 
     reverse_proxy http://10.10.10.10:31012
+}
+
+audiobookshelf.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:30067
 }
