@@ -97,3 +97,12 @@ immich.home.arpa {
 
     reverse_proxy 10.10.10.10:30041
 }
+
+nextcloud.home.arpa {
+    tls internal
+
+    @dav path /.well-known/carddav /.well-known/caldav
+    redir @dav /remote.php/dav/ 301
+
+    reverse_proxy 10.10.10.10:30027
+}
