@@ -75,3 +75,25 @@ vaultwarden.home.arpa {
 
     reverse_proxy http://10.10.10.10:30032
 }
+
+truenas.home.arpa {
+    tls internal
+
+    reverse_proxy http://10.10.10.10:80
+}
+
+openwrt.home.arpa {
+    tls internal
+
+    reverse_proxy https://10.10.10.1 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}
+
+immich.home.arpa {
+    tls internal
+
+    reverse_proxy 10.10.10.10:30041
+}

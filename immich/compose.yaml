@@ -1,0 +1,74 @@
+name: immich
+
+services:
+  server:
+    image: ghcr.io/immich-app/immich-server:v3.3.5@sha256:485d546a2e31d6a8b4db8423fcba5c109de8c218d93410af115fd1ccfc4352a6
+    user: "568:568"
+    restart: unless-stopped
+    env_file:
+      - /mnt/tank/appdata/immich/secrets/server.env
+    ports:
+      - "30041:30041"
+    volumes:
+      - /mnt/tank/data/photos:/data
+      - /mnt/tank/appdata/immich/cli-config:/.config
+    depends_on:
+      pgvecto:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "immich-healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3.3.5-openvino@sha256:1dbac7f811b51b80c55ee0cf678e0089d3532c798f14a65747d5d7b473a4f9d6
+    user: "568:568"
+    restart: unless-stopped
+    env_file:
+      - /mnt/tank/appdata/immich/secrets/machine-learning.env
+    volumes:
+      - /mnt/tank/appdata/immich/mlcache:/mlcache
+    healthcheck:
+      test: ["CMD", "python3", "healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  pgvecto:
+    image: ghcr.io/immich-app/postgres:18-vectorchord1.1.1@sha256:a20e21841b21b9c009daf572c844ffedfaef75fce51287bbf080edf171ef0834
+    user: "999:999"
+    restart: unless-stopped
+    env_file:
+      - /mnt/tank/appdata/immich/secrets/pgvecto.env
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+    volumes:
+      - /mnt/tank/appdata/immich/postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U immich -d immich"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: ghcr.io/valkey-io/valkey:9.1.3@sha256:3add1a336a920ea54770a001ab6feb3da5fceea96a40373a3a2cd469b815f0b7
+    user: "568:568"
+    restart: unless-stopped
+    env_file:
+      - /mnt/tank/appdata/immich/secrets/redis.env
+    command:
+      - sh
+      - -c
+      - 'exec valkey-server --requirepass "$$REDIS_PASSWORD"'
+    volumes:
+      - /mnt/tank/appdata/immich/redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
