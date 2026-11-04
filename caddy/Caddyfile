@@ -106,3 +106,9 @@ nextcloud.home.arpa {
 
     reverse_proxy 10.10.10.10:30027
 }
+
+open-webui.home.arpa {
+    tls internal
+
+    reverse_proxy 10.10.10.10:30070
+}
