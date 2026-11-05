@@ -1,41 +1,57 @@
 # Decisions and lessons
 
-[Back to overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Roadmap](roadmap.md)
+[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Migration history](migrations.md) · [Operations](operations.md) · [Roadmap](roadmap.md)
 
-## Ownership through everyday use
+## Build around everyday use
 
-This lab is part of my daily routine. [Immich](https://immich.app/) replaced Google Photos, [Navidrome](https://www.navidrome.org/) replaced YouTube Music, and [Audiobookshelf](https://audiobookshelf.org/) lets me listen to my purchased books outside Audible. [Nextcloud](https://nextcloud.com/) holds my files and personal information, and [Vaultwarden](https://github.com/dani-garcia/vaultwarden) got me using a password manager for the first time.
+The lab grew from services I actually use: Immich for photos, Navidrome for music, Audiobookshelf for purchased audiobooks, Nextcloud for files and personal information, and Vaultwarden for passwords. Joplin, Actual Budget, Minecraft, and vehicle records make it useful beyond media storage. I built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android) for my own hosted service.
 
-I started moving these services home because I was tired of subscriptions and uncomfortable trusting large companies with so much of my data.
+Reducing subscriptions and controlling where my data lives motivated the project. Maintenance and recovery became my responsibility, while services such as PIA and SimpleFIN still have a place in the setup.
 
-Self-hosting doesn't give me complete privacy. It does let me choose where more of my data lives and reduce my reliance on third parties. I still use services like [SimpleFIN](https://bridge.simplefin.org/) and [PIA](https://www.privateinternetaccess.com/) where they make sense for me.
+## Reuse hardware, separate workloads
 
-The tradeoff is that maintenance and recovery are now my responsibility. Backups are the biggest gap I need to address.
+I converted the gaming PC I already owned into a TrueNAS host: more RAM, mirrored data drives, a 2.5 GbE NIC, and no discrete GPU. The original SSD became the boot drive. This made useful storage infrastructure without replacing the whole machine.
 
-## Reusing the gaming PC
+Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. The completed standard benchmark of the working Q2_0 setup provides its performance baseline, with twelve sanity checks passed and request/output limits documented alongside speed.
 
-I used the gaming PC I already had. I expanded its memory to 32 GB, replaced the original HDD with a mirrored pair, added a 2.5 GbE NIC, and removed the discrete GPU. The original SSD now boots TrueNAS.
+## Keep configuration editable and deployment visible
 
-It gave the machine a new purpose without replacing the whole system.
+I chose TrueNAS-managed custom apps loading on-disk Compose files. The repository holds deployment definitions, while TrueNAS retains lifecycle visibility. This avoided introducing another application-management interface just to edit YAML.
 
-## A mirror is only part of storage protection
+Each stack stays directly under the repository root. A proposed nested `stacks/` reorganization was rejected because it would have changed working include paths and mounts. The host repository is already `/mnt/tank/stacks`.
 
-The two WD Red Plus drives are mirrored, with the OS on a separate SSD. The mirror provides disk redundancy, but it won't recover a deleted file or protect me from losing the whole server. I don't have independent backups or snapshots yet. Fixing that is my highest priority.
+Code-server uses a dedicated editor identity rather than the NAS administrator's identity. Application access is checked per service and dataset. An ACL can explain effective write access even when basic ownership output looks restrictive; recursively changing all app data would discard that distinction.
 
-## Personal filtering without disrupting the household
+## Separate state, user data, and recoverable history
 
-I originally used [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) for the household network, but it interfered with services my family used. Now I use it with [Tailscale](https://tailscale.com/) for my own devices, and the eero doesn't use it as its DNS server.
+The refactor established `stacks` for configuration, `appdata` for state/secrets, and `data` for user content. The later backup project added a separate `backups` location on the same pool. This makes mounts and protection policies easier to understand, but separation within one pool does not create an independent backup.
 
-I can reduce tracking and block sites that encourage habits I'm trying to avoid without making those choices for everyone else. That experience taught me to think about who a network change affects before applying it.
+The mirror provides disk redundancy. Periodic snapshots add local history, and native PostgreSQL exports create application database archives. Archive parsing and checksum verification check the backup files; a full restore test is still needed to validate recovery. An independent copy remains a separate requirement.
 
-## Private access and practical clients
+## Preserve what the application depends on
 
-I generally use the LAN at home and Tailscale when it's unavailable, though some devices use Tailscale automatically. Serve gives me tailnet-only URLs and HTTPS where needed. I want to revisit the network layout more deliberately in a future refactor.
+Audiobookshelf needed its stored library references preserved. The host library moved to shared media, while the container kept its old internal path. A path that looks untidy can encode an application dependency; normalizing it without checking the database would risk breaking the library.
 
-The client apps matter as much as the servers. [DAVx5](https://github.com/bitfireAT/davx5-ose) keeps my calendar and contacts on my phone, [floccus](https://github.com/floccusaddon/floccus) syncs bookmarks, and [Joplin](https://github.com/laurent22/joplin) lets me write notes in Markdown. I built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android) for a service I actually use. The [Nextcloud Android app](https://github.com/nextcloud/android) also lets me grab a file without getting distracted in my phone's browser.
+Navidrome kept the same external port while adopting its normal internal port. qBittorrent required both a matching save path and writable storage. These migrations reinforced the distinction between host paths, container paths, host ports, and application listening ports.
 
-## Network capacity remains constrained
+Future downloader and library paths should share one media filesystem where hardlinks are intended. Being on the same ZFS pool alone is insufficient when paths cross dataset boundaries. The broader common-container-path design remains a future *Arr integration task.
 
-I have 2 Gb/s fiber, a 2.5 GbE switch, and a 2.5 GbE server NIC, but the eero-to-switch connection is limited to 1 Gb/s. Upgrading individual components doesn't remove every bottleneck in the path.
+## Check the layer that actually failed
 
-I'd like to find or build a custom router that can handle 2.5 Gb/s throughput. I haven't chosen the hardware or OS yet.
+Jellyfin's HTTPS failure happened before an HTTP request could reach Jellyfin. The host and editor showed a route that Caddy's container could not see. The confirmed discrepancy was stale container-visible configuration; an editor replacement leaving a stale file bind was a plausible explanation, not a proven root cause.
+
+Prometheus exposed another distinction: Docker's desired port-binding configuration could be present while active publication was absent. A healthy model process did not establish that the host API was reachable. Recreation restored publication, and a systemd startup unit was added. Startup after reboot now works.
+
+The [operations reference](operations.md) includes diagnostic commands for both incidents and distinguishes confirmed symptoms from suspected causes.
+
+## Prefer simple, persistent tooling
+
+GitHub authentication evolved from an interactive HTTPS token to a persistent repository SSH deploy key. A more elaborate credential-manager setup was considered and rejected. Once SSH worked, an explicit override caused an avoidable authentication failure by bypassing the repository's key selection.
+
+Private keys, secret environment files, and personal automation instructions remain outside Git. Ignore rules help with matching files but cannot identify secrets embedded in otherwise valid configuration. Reviewing the actual diff is part of maintaining a public technical portfolio.
+
+## Consider who a network change affects
+
+Earlier household-wide AdGuard filtering interfered with family use, so filtering was narrowed to personal devices through Tailscale at that stage. Both services are now retired. The lesson is to account for other users and provide practical exceptions.
+
+Hermes, a GL.iNet Flint 2 running OpenWrt, now provides the working trusted, IoT, and guest networks and WireGuard remote access. The eero is retired. The original eero-to-switch link illustrated that upgrading a server NIC and switch does not prove throughput across the whole path; current capacity should be measured rather than inferred from the old bottleneck or individual link speeds.

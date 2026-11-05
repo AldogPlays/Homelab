@@ -1,48 +1,145 @@
 # Local AI
 
-[Back to overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md)
+[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Operations](operations.md) · [Roadmap](roadmap.md)
 
-I'm experimenting with running language models locally and will add results here as I tune the setup. These first two Strata benchmarks were on Windows, on a PC with a Ryzen 7 7800X3D, Radeon RX 7800 XT, and 32 GB of DDR5 memory. The first run was untuned. Before the second, I changed speculative depth from the default of 4 to 2. I plan to wipe Windows and test Strata on a bare-metal Ubuntu Server install next.
+Prometheus runs Strata inference on a dedicated AMD machine; Open WebUI runs on TrueNAS. The machine moved from Windows to bare-metal Ubuntu Server in early November 2026. It serves Q2_0 with 64K context, prefers Ethernet with Wi-Fi fallback, and starts successfully after reboot. The completed standard Q2_0 run below is the benchmark baseline.
 
-## Strata benchmark — October 15, 2026
+## Ubuntu deployment
 
-I ran `BENCH.bat` twice on October 15, 2026. Both runs used the same model and benchmark suite. The first run is my untuned baseline; before the second run, I changed speculative depth from the default of 4 to 2. The results below show both runs so I can keep track of the change.
+| Item | Configuration and setup versions |
+| --- | --- |
+| Host / login user | `prometheus` |
+| OS / kernel | Ubuntu Server 26.04.1 LTS / `7.0.0-42-generic` |
+| CPU | Ryzen 7 7800X3D, 8 cores / 16 threads after firmware troubleshooting |
+| GPU | PowerColor RX 7800 XT, 16 GiB VRAM; `amdgpu`, HIP/ROCm inference |
+| Memory | 32 GB DDR5, about 29 GiB usable; 8 GiB swap |
+| Storage | 2 TB nominal NVMe; 100 GB root LV, dedicated 1 TB ext4 LV mounted at `/srv/ai` |
+| Ethernet | Intel I225-V, `enp13s0`, 2.5 Gb/s full duplex; DHCP reservation `10.10.10.20/24` |
+| Route preference | Ethernet metric 100, Wi-Fi metric 600; gateway `10.10.10.1` |
+| Docker / Compose | Docker CE 29.9.2 / Compose 5.7.0 at installation |
+| Strata image / engine | `ghcr.io/niko1221/strata:latest-rocm-gfx110x` / engine 0.1.55 HIP in logs |
+| Model / context | `qwen3.8-flash-next-q2_0`, 65,536-token allocation |
+| Capabilities | Text-only; vision disabled; Bearer API authentication |
+| OpenAI-compatible base URL | `http://10.10.10.20:8080/v1` |
 
-Both runs started the Strata server on port 8080, warmed up, then ran each workload three times (nine short-chat runs and fifteen agent turns). The report identifies the model as `qwen3-8-flash-next-coder-iq1-m`; its output folder records `community-rx-7800-xt`.
+The image uses a moving tag; check the running engine version after updates. The 64K setting allocates context space. The benchmark below tests inputs up to approximately 16K tokens and does not measure answer quality across the full window.
 
-| Workload | Untuned (depth 4) median | Depth 2 median | Samples per run |
-| --- | ---: | ---: | ---: |
-| Short chat decode | 27.30 tokens/s (22.10–34.30) | 27.40 tokens/s (24.40–29.40) | 9 |
-| Short chat first token | 1.01 s (0.83–1.18) | 1.24 s (1.06–1.45) | 9 |
-| 4K prompt processing | 497.40 tokens/s (399.80–499.10) | 498.70 tokens/s (484.10–500.10) | 3 |
-| 4K prompt first token | 8.12 s (8.10–10.09) | 8.10 s (8.06–8.34) | 3 |
-| 16K prompt processing | 501.10 tokens/s (499.50–503.50) | 506.00 tokens/s (504.30–508.80) | 3 |
-| 16K prompt first token | 32.12 s (31.92–32.19) | 31.78 s (31.61–31.91) | 3 |
-| Agent cache hit rate | 68.64% (68.43–68.74) | 68.72% (68.66–68.73) | 3 sessions |
-| Agent re-read tokens/session | 5.00 (4.00–145.00) | 5.00 (5.00–5.00) | 3 sessions |
-| Agent turn first token | 6.40 s (3.79–7.05) | 6.24 s (3.78–8.93) | 15 turns |
-| Agent decode | 31.40 tokens/s (21.70–38.30) | 29.60 tokens/s (19.90–35.90) | 15 turns |
+## Storage and configuration
 
-My short-chat requests generated up to 100 tokens. Prompt-processing trials used fresh prompts of about 4,096 or 16,384 tokens and generated 24 tokens. The agent workload used six turns and four tools per session. The harness estimated about 1.08 tokens per word during calibration in both runs.
+| Prometheus path | Role |
+| --- | --- |
+| `/srv/ai/strata/compose.yaml` | Host-side deployment definition; not present as a stack in this repository |
+| `/srv/ai/strata/data` | Models, packed experts, draft layers, and runtime state; mounted at `/data` |
+| `/srv/ai/strata/secrets/api_key` | Protected API credential; mounted read-only at `/run/secrets/strata_api_key` |
+| `/etc/systemd/system/strata-compose.service` | Host-managed Compose startup unit |
+| `/data/state/strata/launch/docker.engine.log` | Engine log path inside the container |
 
-### Report and sharing
+The dedicated LV is `/dev/ubuntu-vg/ai-data`, mounted persistently at `/srv/ai` through fstab. The mount survives reboots. The remaining volume-group space was left unallocated.
 
-The harness saved a detailed report for the first run in my Strata checkout at:
+Strata is configured with `FAMILY: qwen`, `MODEL: Q2_0`, `CONTEXT: "64k"`, `VISION: "off"`, and `API_KEY_FILE`. The container receives `/dev/kfd` and `/dev/dri`, adds video/render groups `44` and `991`, and uses 2 GB shared memory, unlimited memlock, a 120-second stop grace period, and bounded JSON-file logs. The host binding is `10.10.10.20:8080:8080`. The full Compose definition lives on Prometheus at the path above.
+
+## Open WebUI connection
+
+Open WebUI connects to Strata's Q2_0 model through its OpenAI-compatible API, including `/v1/models` and `/v1/chat/completions`.
+
+The [Open WebUI stack](../open-webui/compose.yaml) specifies version `v0.13.0`, host port `30070`, persistent data under `appdata/open-webui/data`, an external secret file, and disabled Ollama integration. Caddy serves it at `open-webui.home.arpa`.
+
+During initial use, some replies appeared delayed in Open WebUI while backend requests had already completed. The cause was not isolated. When troubleshooting a similar delay, compare backend completion with visible answer timing; reasoning and tool activity can precede the final answer.
+
+## Firmware, networking, and startup
+
+Linux initially exposed 8 threads with SMT reported as `notsupported`. The kernel command line contained no explicit `nosmt`. A BIOS change restored 8 cores / 16 threads and SMT `on`. Gigabyte X3D Turbo Mode was a suspected cause; the specific firmware setting responsible remains uncertain.
+
+Ethernet initially had link but no IPv4 DHCP setting in Netplan. Enabling DHCP and moving the `.20` reservation to the Ethernet adapter established access. Wi-Fi initially retained the preferred route; lowering Ethernet's metric to 100 made it preferred while Wi-Fi remained at 600. The Netplan trial was accepted, and these route preferences remain in use.
+
+During the initial reboot/network changes, Strata sometimes stopped or lost active port publication even though Docker retained its desired binding. Recreating the container restored publication. The systemd unit now waits for `10.10.10.20` on `enp13s0`, then invokes Compose with `up -d --force-recreate`. Both a manual service start and startup after reboot have been tested successfully.
+
+For inspection commands and the distinction between model loading and missing publication, see [operations](operations.md#prometheus-healthy-container-unreachable-api). Hardware recovery after a power outage and recovery from an unhealthy-but-running process still need separate verification.
+
+## Q2_0 standard benchmark
+
+I ran the standard suite against Q2_0 at 64K context. The run completed with **zero failed requests** and **12/12 sanity checks passed**. These results are the performance baseline for this setup.
+
+| Item | Benchmark configuration |
+| --- | --- |
+| Started | 2026-11-05 05:44:24 UTC; November 4, 21:44:24 Pacific |
+| Run ID | `20261105T054424Z-1e39bba3` |
+| Protocol | `strata-qwen38-thinking-v1-draft.1`, draft; `standard-v1` suite |
+| Strata commit | `c62d5e3a15b40ea51c96aae9e8d36928965f53ab` |
+| Engine / build | 0.1.55 / release |
+| Model / quantization | `qwen3.8-flash-next-q2_0` / Q2_0 |
+| Context / capacity | 65,536 tokens / one serving slot |
+| Track | `custom`; no additional track notes |
+| Sampling | Temperature 1.0; top_p 0.95; top_k 20; min_p 0; presence penalty 0; repetition penalty 1.0 |
+| Reasoning | `xhigh`, thinking enabled and preserved |
+| Duration after model loading | 20 minutes 42 seconds, as reported by the runner |
+| Host | Ryzen 7 7800X3D, RX 7800 XT 16 GiB from the host inventory; runner reported generic `AMD Radeon` and 30.0 GiB RAM |
+| Host OS | Ubuntu 26.04.1 LTS, from host `/etc/os-release` |
+| Runner environment | Inside Docker: Ubuntu 24.04.5 LTS; kernel `7.0.0-42-generic` |
+
+The benchmark ran inside Docker, so its Ubuntu 24.04.5 label describes the container userspace. The Prometheus host runs Ubuntu 26.04.1. The runner reads its local `/etc/os-release`; see the [OS-probe source](https://github.com/Niko1221/Strata/blob/main/strata_cli/bench_facts.py).
+
+### Performance
+
+Values are medians with minimum–maximum ranges. Each performance case has three samples, except 16K first-answer latency, which has two.
+
+| Case | Prompt tokens/s | Decode tokens/s | First token, s | First answer, s | Total, s | Capped |
+| --- | --- | --- | --- | --- | --- | --- |
+| Short | Not reported | 49.7 (39.4–64.0) | 1.41 (0.85–1.52) | 2.89 (2.81–9.33) | 11.1 (8.0–13.4) | 1/3 |
+| 4K prompt | 167.3 (121.4–215.6) | 36.5 (30.9–53.2) | 24.50 (19.01–33.77) | 29.09 (25.43–46.69) | 34.1 (33.0–50.3) | 3/3 |
+| 16K prompt | 208.5 (158.9–322.2) | 44.5 (29.3–49.6) | 78.66 (50.92–103.23) | 70.16 (58.38–81.94) | 96.1 (62.4–113.5) | 3/3 |
+
+Generation reached median rates of 36.5–49.7 tokens/s across the three cases. Longer inputs incurred substantial startup latency: median first-token time was 24.50 seconds at 4K and 78.66 seconds at 16K. These are loopback API measurements, including reasoning; they do not measure Open WebUI overhead.
+
+The short prompt was about 80 tokens, so the report omits its prompt-processing rate because fixed request overhead dominates. The 16K first-answer median uses a different sample count from its first-token median: one request produced no visible answer before the cap. The two medians therefore are not a paired timing comparison.
+
+### Output caps and sanity checks
+
+Each performance request could generate at most **512 tokens, including reasoning and visible answer text**. Reaching that cap is an expected benchmark boundary and is labeled `truncated`; total duration then measures time to the cap, not time to a complete answer. It does not reduce the configured 64K context or establish a model output limit. See the [protocol's truncation rules](https://github.com/Niko1221/Strata/blob/main/docs/BENCHMARK_PROTOCOL.md).
+
+| Phase | Planned | Completed without cap | Truncated | Failed | Skipped |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Warm-up | 1 | 0 | 1 | 0 | 0 |
+| Performance | 9 | 2 | 7 | 0 | 0 |
+| Sanity | 12 | 12 | 0 | 0 | 0 |
+| Concurrency | 0 | 0 | 0 | 0 | 0 |
+
+All four instruction checks, four retrieval checks, and four tool-call checks passed. This verifies those twelve fixtures; it is not a broad intelligence or coding-quality score. No concurrency test was run, and the longest performance input was approximately 16K, not the full 64K allocation.
+
+### Artifacts and limits
+
+The original files remain on Prometheus, outside this repository:
 
 ```text
-bench/results/2026-10-15-community-rx-7800-xt-qwen3-8-flash-next-coder-iq1-m/README.md
+/srv/ai/strata/data/benchmarks/q2_0-20261105T054344Z/
+├── README.md
+├── config.json
+├── outputs.jsonl
+├── provenance/
+└── results.json
 ```
 
-That report is separate from this homelab repository. The harness says it replaces home-folder, user, host, and IP details, but I'll review the generated README before sharing it. Strata's suggested publication route is to add the results folder to a pull request using `docs/COMMUNITY_BENCHMARKS.md`, or paste its README into a GitHub issue. I haven't copied the full report into this repository.
+The tables above summarize the generated benchmark README. Full request traces, configuration, and provenance remain in the artifact directory. The report files are root-owned, mode `600`; read them with `sudo` rather than changing their permissions.
 
-The speculative-depth-2 run's report is at:
+The report identifies two split GGUF files, with abbreviated hash prefixes `69820c02ec7d0b45…` and `316b46f3a2dbd68c…`; complete hashes belong to the original artifacts. Model/source revisions, driver/runtime versions, storage characteristics, and background work were not measured. The server had answered one request before the run. Shared template-prefix and expert-cache state remained warm and evolved during the test, so this is not a cold-model measurement.
 
-```text
-bench/results/2026-10-15-community-rx-7800-xt-qwen3-8-flash-next-coder-iq1-m-2/README.md
+Reaching the output cap does not invalidate this baseline. If repeating the fixed suite, restart the engine between runs as required by the protocol to avoid reusing prompt state.
+
+### Run command
+
+Connect with `ssh prometheus@10.10.10.20`, leave other inference clients idle, and run:
+
+```bash
+sudo docker exec -it strata sh -ec '
+  strata bench run --help >/dev/null
+  export STRATA_API_KEY="$(cat /run/secrets/strata_api_key)"
+  exec strata bench run \
+    --url http://127.0.0.1:8080 \
+    --no-start \
+    --out "/data/benchmarks/q2_0-$(date -u +%Y%m%dT%H%M%SZ)"
+'
 ```
 
-### Notes
+This uses the running model through container loopback, reads authentication from its existing mounted file, and saves reports in persistent storage. `--no-start` prevents the runner from launching another engine. The help check stops the block if the installed CLI lacks the benchmark command. Command behavior and authentication are documented in [terminal commands](https://github.com/Niko1221/Strata/blob/main/docs/TERMINAL.md).
 
-- These medians and ranges come from the harness output; each generated report has the per-run measurements.
-- For the second run, I changed speculative depth to 2. The short-chat decode median was nearly unchanged, while its first-token median was 0.23 seconds higher. The runs alone don't establish that speculative depth caused the difference.
-- First-token latency rose with prompt length in both runs. Reported prompt-processing throughput was about 500 tokens/s for both long-prompt sizes.
+The output directory inside the container maps to `/srv/ai/strata/data/benchmarks/` on Prometheus. Retain the generated README, JSON, and supporting files together. Review the report before publishing. The reported 20 minutes 42 seconds applies to this run after model loading; it is not a universal duration estimate.

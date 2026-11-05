@@ -1,80 +1,99 @@
 # Services and clients
 
-[Back to overview](../README.md) · [Infrastructure](infrastructure.md) · [Decisions](decisions-and-lessons.md) · [Roadmap](roadmap.md)
+[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Operations](operations.md) · [Backups](backups.md) · [Roadmap](roadmap.md)
 
-## Deployment and access
+The repository contains 15 Compose stacks managed through TrueNAS Apps. This reference covers their purpose, ports, storage, and clients. Use each linked Compose file for image versions and deployment settings; application-specific runtime configuration stays in external storage.
 
-TrueNAS Apps manages hosted services. This repository contains Compose source configurations for code-server, qBittorrent with Gluetun/PIA, SearXNG, and Caddy. Repository configuration alone does not establish which version is deployed or the current service count.
+## Application reference
 
-Personal devices generally use LAN access when available and Tailscale otherwise; some use Tailscale automatically. Tailscale runs on TrueNAS and client devices, with [Serve](https://tailscale.com/docs/features/tailscale-serve) providing private URLs and HTTPS where needed. Compose configurations include internal addresses and service mappings. Credentials and runtime state remain outside Git.
+All web names below end in `.home.arpa` and appear in the [Caddyfile](../caddy/Caddyfile). Port mappings are **host → container** from the corresponding Compose source. Some mappings bind explicitly to `10.10.10.10`; others omit a host address. Consult the source before assessing listening scope.
 
-## Repository-managed configuration
+| Stack source | Purpose | Web hostname | Published web port | State and dependencies |
+| --- | --- | --- | --- | --- |
+| [Actual Budget](../actual-budget/compose.yaml) | Personal budgeting and SimpleFIN imports | `actual-budget` | `31012 → 5006` | `appdata/actual-budget` |
+| [Audiobookshelf](../audiobookshelf/compose.yaml) | Purchased audiobook library | `audiobookshelf` | `30067 → 80` | Configuration/metadata in appdata; books in shared media |
+| [Caddy](../caddy/compose.yaml) | Private HTTPS reverse proxy | Per-service names | `443 → 443` TCP | External CA/runtime state; repository Caddyfile |
+| [code-server](../code-server/compose.yaml) | Browser editor and Git workspace | `code-server` | `32443 → 8443` | Editor state/auth in appdata; stacks mounted at `/workspace` |
+| [Crafty 4](../crafty-4/compose.yaml) | Minecraft server management | `crafty-4` | `30146 → 8443` | Config, servers, imports, logs, backups in appdata |
+| [Immich](../immich/compose.yaml) | Photo and video archive | `immich` | `30041 → 30041` | PostgreSQL/VectorChord, Valkey, OpenVINO ML image; photos in `data/photos` |
+| [Jellyfin](../jellyfin/compose.yaml) | Movies and TV | `jellyfin` | `30013 → 8096` | Config in appdata; read-only shared media |
+| [Joplin Server](../joplin/compose.yaml) | Notes synchronization service | `joplin` | `30106 → 30106` | PostgreSQL; Joplin clients sync here |
+| [LubeLogger](../lubelogger/compose.yaml) | Truck maintenance, modifications, and fuel | `lubelogger` | `30035 → 30035` | PostgreSQL, app files, data-protection keys |
+| [Navidrome](../navidrome/compose.yaml) | Music library | `navidrome` | `30043 → 4533` | State in appdata; read-only `media/music` |
+| [Nextcloud](../nextcloud/compose.yaml) | Files, calendar, contacts, bookmarks | `nextcloud` | `30027 → 80` | Custom FFmpeg image, cron, PostgreSQL 17, Valkey; files in `data/files` |
+| [Open WebUI](../open-webui/compose.yaml) | Interface to local models | `open-webui` | `30070 → 8080` | Persistent backend data and external secret file; Ollama integration disabled in source |
+| [qBittorrent + Gluetun](../qbittorrent/compose.yaml) | Downloads through PIA | `qbittorrent` | `33080 → 33080` via Gluetun | Shared network namespace; config/VPN state in appdata; torrent data in media |
+| [SearXNG](../searxng/compose.yaml) | Metasearch | `searxng` | `34053 → 8080` | External settings and cache |
+| [Vaultwarden](../vaultwarden/compose.yaml) | Password vault | `vaultwarden` | `30032 → 30032` | PostgreSQL plus vault data in appdata |
 
-| Source | Configuration prerequisites |
+Crafty also publishes `8100` and TCP `25500–25600`. PostgreSQL and cache services have no host port publications in these stacks. Image tags/digests and complete volume definitions remain in Compose rather than being duplicated here.
+
+## Caddy, DNS, and trust
+
+Caddy's source uses `tls internal` for every site. Client DNS must resolve the configured names to the proxy, and clients must trust its public root certificate. CA private keys and runtime state remain under `/mnt/tank/appdata/caddy/data`; the configuration also persists `/mnt/tank/appdata/caddy/config`.
+
+In addition to the application routes above, the Caddyfile contains:
+
+| Name | Configured action |
 | --- | --- |
-| [code-server](../code-server/compose.yaml) | External authentication file at `/mnt/tank/appdata/code-server/auth.env`; host stacks mounted at `/workspace` |
-| [qBittorrent and Gluetun](../qbittorrent/compose.yaml) | External PIA credentials at `/mnt/tank/appdata/qbittorrent/pia.env`; application state and torrent data outside Git |
-| [SearXNG](../searxng/compose.yaml) | Configuration and cache under `/mnt/tank/appdata/searxng`; do not commit live settings or secret keys |
-| [Caddy](../caddy/compose.yaml) and [Caddyfile](../caddy/Caddyfile) | Local DNS for `test.home.arpa`, `code.home.arpa`, `search.home.arpa`, and `torrents.home.arpa`; clients must trust Caddy's internal CA for HTTPS. CA private keys and runtime storage remain outside Git |
+| `test.home.arpa` | Diagnostic text response |
+| `truenas.home.arpa` | Proxy to `http://10.10.10.10:80` |
+| `openwrt.home.arpa` | Proxy to `https://10.10.10.1` |
 
-### Caddy and SearXNG access
+Application upstreams use `10.10.10.10` and the host ports in the table. Crafty's upstream is HTTPS; other application upstreams are HTTP. Crafty and OpenWrt explicitly skip upstream TLS verification in the source. Nextcloud has CardDAV/CalDAV discovery redirects to `/remote.php/dav/`.
 
-Caddy serves a test response at `test.home.arpa` and proxies `code.home.arpa`, `search.home.arpa`, and `torrents.home.arpa` to HTTP ports `32443`, `34053`, and `33080` respectively on `10.10.10.10`. All four sites use `tls internal`. Resolve these names to the host address and distribute only the CA public certificate to clients; keep the CA private key in external runtime storage.
+Only TCP 443 is published by the Caddy stack. Use explicit HTTPS URLs; its Compose definition publishes neither host port 80 for redirects nor UDP 443 for HTTP/3. Backend application ports remain published independently, and Caddy adds no authentication. Immich, Bitwarden, and DAVx5 work on my phone through the `home.arpa` HTTPS URLs.
 
-The Caddy Compose file publishes TCP port 443 only. Use explicit HTTPS URLs: host port 80 is not published for HTTP redirects, and UDP port 443 is not published for HTTP/3. Verify port availability before deployment. The backend ports remain directly published; Caddy adds no authentication. SearXNG settings, secret key, public base URL, and proxy behavior must be checked in its external configuration without copying that file into Git.
+Names such as `code.home.arpa`, `search.home.arpa`, and `torrents.home.arpa` are historical aliases, superseded by the service names in the current source. For a route that appears in the editor but not in Caddy, see [the container-file diagnostic](operations.md#caddy-route-present-on-host-but-missing-in-container).
 
-### qBittorrent networking review
+## External configuration
 
-qBittorrent shares Gluetun's network namespace. The Web UI is published on `10.10.10.10:33080`; `FIREWALL_INPUT_PORTS` permits that port on Gluetun's default interface. PIA port forwarding separately supplies the torrent listening port. The up/down hooks call the qBittorrent API at `127.0.0.1:33080`, setting the torrent interface to the VPN interface on forwarding startup and to loopback on teardown.
+Real secrets and runtime configuration stay outside Git. The repository references these files without including their contents:
 
-The current Compose configuration removes the previous `FIREWALL_OUTBOUND_SUBNETS: 192.168.4.124/32` exception. The loopback hooks do not require it. Before deploying this change, check whether search integrations, proxies, notifications, or other application settings still depend on that address; its original purpose is unverified. Do not replace it with a broad LAN allowance. See [Gluetun firewall options](https://github.com/qdm12/gluetun-wiki/blob/main/setup/options/firewall.md).
+| Stack | External files under `/mnt/tank/appdata/` |
+| --- | --- |
+| code-server | `code-server/auth.env` |
+| qBittorrent/Gluetun | `qbittorrent/pia.env` |
+| Joplin | `joplin/postgres.env`, `joplin/joplin.env` |
+| LubeLogger | `lubelogger/postgres.env`, `lubelogger/lubelogger.env` |
+| Vaultwarden | `vaultwarden/postgres.env`, `vaultwarden/vaultwarden.env` |
+| Nextcloud | `nextcloud/secrets/{nextcloud,cron,postgres,redis}.env` |
+| Immich | `immich/secrets/{server,machine-learning,pgvecto,redis}.env` |
+| Open WebUI | `open-webui/secrets/open-webui.env` |
 
-The current hooks follow [Gluetun's qBittorrent example](https://github.com/qdm12/gluetun-wiki/blob/main/setup/advanced/vpn-port-forwarding.md) and require localhost authentication bypass. This grants API access to processes in the shared network namespace. Runtime authentication settings have not been verified. Require authentication for LAN clients, avoid subnet-wide bypass, and retain CSRF and host-header protections. Do not disable localhost bypass independently of replacing and testing the hooks with authenticated requests. Keep any hook credentials and session cookies outside Git and out of command output.
+The brace notation summarizes separate filenames. SearXNG's settings and secret key live in its external configuration directory. Application listen ports, public URLs, proxy trust, and authentication can depend on those runtime settings; publishing a Compose file alone does not capture them.
 
-The Caddyfile defines `https://torrents.home.arpa` with an HTTP upstream at `10.10.10.10:33080`. Client HTTPS requires local DNS and trust in Caddy's internal CA; it does not encrypt the upstream connection or remove direct access to the published Web UI port. Runtime Web UI settings and proxy compatibility remain unverified. Verify the active VPN interface, hook success, and forwarding recovery on a later approved deployment; the hooks do not replace Gluetun's firewall protection.
+Nextcloud builds [its custom image](../nextcloud/Dockerfile) with FFmpeg. Its cron service shares the app's HTML/data mounts. The Compose file's cutover comment dates from the completed migration; use an application-specific synchronization and database plan for any future move.
 
-Changing the environment requires recreating Gluetun through the existing deployment mechanism; a plain container restart does not apply Compose environment changes. Coordinate qBittorrent recreation with Gluetun because it shares that namespace. This interrupts downloads. Repository edits alone do not change the running application.
+## qBittorrent and VPN behavior
 
-## Current services
+qBittorrent shares Gluetun's network namespace. Gluetun publishes the Web UI on `10.10.10.10:33080`, permits that input port, and obtains a separate torrent listening port through PIA. The up/down hooks call qBittorrent's loopback API, selecting the VPN interface on forwarding startup and loopback on teardown. The Web UI port and dynamic torrent port serve different purposes.
 
-| Service | What I use it for | Clients and integrations |
-| --- | --- | --- |
-| [Actual Budget](https://actualbudget.org/) | Personal budgeting | Bank transaction imports through [SimpleFIN](https://bridge.simplefin.org/) |
-| [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) | Reduce tracking and block sites associated with unwanted habits on personal devices | Used with Tailscale; not configured as the eero's DNS server |
-| [Audiobookshelf](https://audiobookshelf.org/) | Replaces Audible for purchased audiobooks | [Lissen](https://github.com/GrakovNe/lissen-android) on Android; [OpenAudible](https://github.com/openaudible/openaudible) used to prepare purchased books for import |
-| [Crafty 4](https://craftycontrol.com/) | Minecraft server for me and my girlfriend | — |
-| [File Browser](https://github.com/filebrowser/filebrowser) | File management and small repairs for media applications and downloads | Jellyfin, Audiobookshelf, Navidrome, and torrent download files |
-| [FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) | Supports indexer searches | Works with Jackett for qBittorrent searches |
-| [Immich](https://immich.app/) | Replaces Google Photos | [Immich Android app](https://github.com/immich-app/immich/tree/main/mobile); all personal devices automatically upload photos and videos |
-| [Jackett](https://github.com/Jackett/Jackett) | Indexer support for qBittorrent searches | FlareSolverr and qBittorrent |
-| [Jellyfin](https://jellyfin.org/) | Movies and TV obtained through qBittorrent; increasingly used by family | [AFinity](https://github.com/MakD/AFinity) on Android, preferred for its feature set |
-| [LubeLogger](https://lubelogger.com/) | Truck maintenance, modifications, and fuel tracking | My [LubeLogger Android app](https://github.com/AldogPlays/LubeLogger-Android) |
-| [Navidrome](https://www.navidrome.org/) | Replaces YouTube Music | [Navic](https://github.com/ssalggnikool/Navic) on Android |
-| [Nextcloud](https://nextcloud.com/) | Professional, personal, and educational files; calendar, contacts, and bookmarks | Web interface, occasional [Nextcloud Android](https://github.com/nextcloud/android) file access, [DAVx5](https://github.com/bitfireAT/davx5-ose), [floccus](https://github.com/floccusaddon/floccus), and [Joplin](https://github.com/laurent22/joplin) |
-| [qBittorrent](https://www.qbittorrent.org/) | Movie and TV downloads only | [qBitController](https://github.com/Bartuzen/qBitController) on Android; custom YAML with Gluetun/PIA; Jackett and FlareSolverr |
-| [Tailscale](https://tailscale.com/) | Private access to all hosted services | TrueNAS app, [Tailscale Android](https://github.com/tailscale/tailscale-android) and other client apps, and Serve |
-| [Vaultwarden](https://github.com/dani-garcia/vaultwarden) | Password manager | [Bitwarden Android](https://github.com/bitwarden/android) and [browser extensions](https://github.com/bitwarden/clients) connected to the self-hosted server |
+Migration checks verified matching VPN egress, a qBittorrent listening port matching PIA's assignment, and `tun0` selected. The hooks use localhost authentication bypass in the shared namespace. Keep LAN authentication and Web UI protections intact; replace and test the hooks before changing loopback authentication. After a VPN change, verify downloads, seeding, and port-forwarding recovery.
 
-I've switched away from envelope budgeting in Actual Budget. I'm also waiting for Fidelity compatibility with SimpleFIN to return.
+The old `FIREWALL_OUTBOUND_SUBNETS` exception for `192.168.4.124/32` has been removed. Its original integration purpose is unknown; any new exception should have a specific, tested requirement.
 
-## Client workflows
+Compose environment changes take effect when the app is recreated through TrueNAS. Coordinate qBittorrent with Gluetun because it shares that namespace, and allow for interrupted downloads.
 
-### Files, notes, and personal information
+## Media storage
 
-I mostly use Nextcloud's web interface for files. On my phone, I occasionally use the Nextcloud Android app to grab a file without opening the browser and getting distracted.
+| Host source | Container use in the repository |
+| --- | --- |
+| `data/media/audiobooks` | Audiobookshelf's preserved library destination `/mnt/tank/Apps/audiobookshelf/audiobooks` |
+| `data/media/music` | Navidrome `/music`, read-only |
+| `data/media` | Jellyfin `/media`, read-only |
+| `data/media/torrents` | qBittorrent `/data/torrents` |
 
-My calendar and contacts sync to my [GrapheneOS](https://grapheneos.org/) phone through DAVx5, and bookmarks sync through floccus. I use Joplin for class, personal, and professional notes. I like writing in Markdown, and Nextcloud handles the sync.
+These host paths are beneath `/mnt/tank`. Audiobookshelf's internal path is intentional; changing it can invalidate stored library references. New movies, TV, and torrent paths should remain ordinary directories in the shared media dataset where hardlinks are intended. A common container `/data` layout for a future *Arr stack is a proposal, not the current qBittorrent mount. No *Arr stack is deployed.
 
-### Media and photos
+## Clients and integrations
 
-On Android, I listen to audiobooks with Lissen, music with Navic, and watch Jellyfin through AFinity. qBitController lets me manage qBittorrent. I used OpenAudible to import my purchased audiobooks into Audiobookshelf.
+On GrapheneOS/Android, I use Lissen for audiobooks, Navic for music, AFinity for Jellyfin, qBitController for downloads, Immich for photo uploads, and Bitwarden for Vaultwarden. I used OpenAudible to prepare purchased audiobooks. Immich, Bitwarden, and DAVx5 work through private HTTPS.
 
-All my personal devices automatically upload photos and videos to Immich. It's replaced Google Photos for me, though I still need an independent backup of the server.
+Nextcloud is used for files, DAVx5 calendar/contacts, and floccus bookmarks. Joplin holds class, personal, and professional Markdown notes and now syncs through Joplin Server. Nextcloud is no longer its sync target.
 
-### Passwords and vehicle records
+[LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android) is the client I built for my own truck records. Actual Budget uses SimpleFIN imports. Its [bank-sync script](../actual-budget/scripts/actual-bank-sync.sh) reads an external environment file and mounted password file, with a daily midnight cron job running as root. Fidelity/SimpleFIN compatibility remains an integration item to check.
 
-Vaultwarden is my first password manager, and I use it through Bitwarden Android and its browser extensions. For my truck, I use [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), the client I built for my hosted LubeLogger instance.
+## Remote access and retired services
 
-## Planned changes
-
-I'd like to add an *Arr stack for media later. Backups and snapshots come first; see the [roadmap](roadmap.md).
+WireGuard on Hermes provides remote access. AdGuard Home, Tailscale, File Browser, Jackett, and FlareSolverr are no longer used. Their appearance in migration logs describes the previous setup; they are not dependencies of the current service list. Gluetun/PIA remains qBittorrent's outbound VPN and serves a separate purpose from remote-access WireGuard.

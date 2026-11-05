@@ -1,6 +1,8 @@
 # PostgreSQL Backup and Recovery — TrueNAS Homelab
 
-Last reviewed: 2026-11-05. This is an operational runbook, not an automated restore procedure.
+[Overview](../README.md) · [Backups and snapshots](backups.md) · [Operations](operations.md)
+
+Use this runbook to select, check, and restore the PostgreSQL backups configured on November 4, 2026. Check container versions and backup availability before use. A full restore test has not yet been performed.
 
 ## Scope and schedules
 
@@ -12,15 +14,15 @@ Last reviewed: 2026-11-05. This is an operational runbook, not an automated rest
 - Backup script: `/mnt/tank/backups/bin/postgres-backup.sh`.
 - Retention script: `/mnt/tank/backups/bin/postgres-retention.sh`.
 - Versioned script sources: `/mnt/tank/stacks/scripts/`.
-- **Local-only protection:** database dumps and ZFS snapshots are on `tank`. Offsite replication has not yet been configured.
+- **Local-only protection:** database dumps and ZFS snapshots are on `tank`; there is no offsite copy yet.
 - **Restore test:** not yet performed. Archive/checksum checks do not prove a full restore will succeed.
 
 ## Databases
 
-| App | Production database container | PostgreSQL version at last review | Related application data |
+| App | Database container | PostgreSQL version at backup setup | Related application data |
 | --- | --- | --- | --- |
 | Nextcloud | `ix-nextcloud-postgres-1` | 17.11 | `tank/appdata/nextcloud`, `tank/data/files` |
-| Immich | `ix-immich-pgvecto-1` | 18.x with VectorChord | `tank/appdata/immich`, `tank/data/photos` |
+| Immich | `ix-immich-pgvecto-1` | 18.4 with VectorChord 1.1.1 | `tank/appdata/immich`, `tank/data/photos` |
 | Vaultwarden | `ix-vaultwarden-postgres-1` | 18.6 | `tank/appdata/vaultwarden` |
 | Joplin | `ix-joplin-postgres-1` | 18.6 | `tank/appdata/joplin` |
 | LubeLogger | `ix-lubelogger-postgres-1` | 18.6 | `tank/appdata/lubelogger` |

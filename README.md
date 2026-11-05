@@ -1,23 +1,28 @@
 # Homelab
 
-I run my personal cloud on a repurposed gaming PC with [TrueNAS SCALE](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media, along with a few tools I use every day.
+I run my personal cloud on a repurposed gaming PC with [TrueNAS](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media. A second machine, Prometheus, runs local AI models on an AMD GPU.
 
 I started this to replace recurring subscriptions and have more control over my data. This repository records the setup, the decisions behind it, and the things I still need to improve.
 
-## Current architecture
+The pages below cover the current setup, routine operations, and the migrations that shaped it. Configuration files stay alongside their applications; runtime data and secrets live outside the repository.
+
+## Architecture
 
 ```mermaid
 flowchart LR
-    Internet["2 Gb/s fiber service"] --- Router["ISP-provided eero 6E"]
-    Router ---|Wi-Fi| Wireless["Wireless devices"]
-    Router --- Switch["TP-Link unmanaged switch<br/>8 ports · 2.5 GbE"]
-    Switch --- Entertainment["Consoles and TVs"]
-    Switch --- Host["Repurposed PC<br/>TrueNAS SCALE 25.10.4<br/>2.5 GbE NIC"]
+    Remote["Remote devices"] -->|WireGuard| Router["Hermes<br/>GL.iNet Flint 2 · OpenWrt"]
+    Router --> Trusted["Trusted network"]
+    Router --> IoT["IoT network"]
+    Router --> Guest["Guest network"]
+    Trusted --> Proxy["Caddy<br/>Private HTTPS"]
+    Proxy --> Apps["TrueNAS Apps<br/>Git-managed Compose"]
+    Apps --> State["Application state<br/>and user-data datasets"]
+    Apps --> WebUI["Open WebUI"]
+    WebUI --> AI["Prometheus<br/>Ubuntu · Strata · AMD GPU"]
+    State --> Recovery["Local snapshots<br/>and database exports"]
 ```
 
-Most devices use eero Wi-Fi; some consoles and TVs are wired to the switch. My devices usually access services over the LAN at home and through Tailscale elsewhere, though some use Tailscale automatically in either location. [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve) provides private service URLs and HTTPS where needed.
-
-The current bottleneck is the eero-to-switch connection, which is limited to 1 Gb/s.
+Hermes is the main router, with working trusted, IoT, and guest networks. WireGuard on Hermes provides remote access. The eero is retired. Local services use `home.arpa` names and Caddy HTTPS; Immich, Bitwarden, and DAVx5 work on my phone through those URLs. The diagram shows relationships, not individual switch ports or firewall rules. See [infrastructure](docs/infrastructure.md) for hardware and storage details.
 
 ## Hardware gallery
 
@@ -48,13 +53,14 @@ Click a photo to view it larger.
 
 ## What I run
 
-| Area | Current services and workflows |
+| Area | Services and workflows |
 | --- | --- |
 | Personal data | [Nextcloud](https://nextcloud.com/) for files, calendar, contacts, and bookmarks; [Immich](https://immich.app/) for automatic photo and video uploads; [Vaultwarden](https://github.com/dani-garcia/vaultwarden) for passwords |
-| Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Nextcloud; [Actual Budget](https://actualbudget.org/) with SimpleFIN transaction imports |
+| Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Joplin Server; [Actual Budget](https://actualbudget.org/) with SimpleFIN transaction imports |
 | Media | [Jellyfin](https://jellyfin.org/) for movies and TV, [Audiobookshelf](https://audiobookshelf.org/) for purchased audiobooks, [Navidrome](https://www.navidrome.org/) for music |
 | Personal projects | [Crafty 4](https://craftycontrol.com/) for a Minecraft server; [LubeLogger](https://lubelogger.com/) for truck maintenance, modifications, and fuel |
-| Supporting infrastructure | [Tailscale](https://tailscale.com/), [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome), [File Browser](https://github.com/filebrowser/filebrowser), and [qBittorrent](https://www.qbittorrent.org/) with Gluetun/PIA, Jackett, and FlareSolverr |
+| Local AI | Strata on Prometheus, accessed through [Open WebUI](https://github.com/open-webui/open-webui) on TrueNAS |
+| Supporting infrastructure | Caddy for private HTTPS, code-server for editing, SearXNG for search, and qBittorrent with Gluetun/PIA for downloads |
 
 I use a mix of web interfaces and dedicated apps, including [DAVx5](https://github.com/bitfireAT/davx5-ose) and [floccus](https://github.com/floccusaddon/floccus) with Nextcloud, [Navic](https://github.com/ssalggnikool/Navic) with Navidrome, and [AFinity](https://github.com/MakD/AFinity) with Jellyfin. I also built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), which I use with my own server.
 
@@ -62,16 +68,16 @@ I use a mix of web interfaces and dedicated apps, including [DAVx5](https://gith
 
 - **Reuse existing hardware:** upgraded the former gaming PC's memory and storage, added a 2.5 GbE NIC, and removed its discrete GPU.
 - **Separate storage roles:** a dedicated SSD boots TrueNAS; two 6 TB HDDs form a mirrored data pool.
-- **Keep filtering personal:** AdGuard Home is used with Tailscale for my devices after network-wide DNS filtering interfered with family use.
+- **Keep deployments understandable:** TrueNAS manages app lifecycle while Compose definitions live in Git, separate from runtime state and secrets.
 - **Make it useful every day:** the lab replaces Google Photos, YouTube Music, Audible, and other services I used to rely on.
 
 See [decisions and lessons](docs/decisions-and-lessons.md) for the reasoning and tradeoffs.
 
 ## Limitations and next steps
 
-**There are currently no independent backups or snapshots.** The HDD mirror provides disk redundancy, not a separate recoverable copy of my data. A backup system and snapshot strategy are the highest-priority planned improvements. Device uploads to Immich do not provide an independent backup of the server.
+Local ZFS snapshots and daily PostgreSQL backup/retention jobs were newly configured on November 4. A manual backup run succeeded. Email alerts, an offsite copy, and a full restore test are still outstanding; scheduled execution is the next check for the new jobs. See [backups and snapshots](docs/backups.md) for coverage and limits.
 
-After that, I want to build or find a router capable of 2.5 Gb/s throughput, possibly keep the eero for Wi-Fi, and add an *Arr stack. A broader networking refactor is also on the [roadmap](docs/roadmap.md).
+The [roadmap](docs/roadmap.md) covers recovery verification, network follow-ups, and a future *Arr stack; none is deployed yet. Prometheus starts successfully after reboot. Its completed [standard Q2_0 benchmark](docs/local-ai.md#q2_0-standard-benchmark) passed all 12 sanity checks with no failed requests; median decode rates were 36.5–49.7 tokens/s across short, 4K, and 16K cases. The report preserves output-cap and latency limits alongside those results.
 
 ## Subscription costs avoided
 
@@ -89,18 +95,22 @@ The annual figures are 12 monthly payments. These are avoided subscription costs
 
 ## Repository configuration
 
-Compose source files live in `<app>/compose.yaml`, under `/workspace` in code-server and `/mnt/tank/stacks` on the host. The repository contains configurations for code-server, qBittorrent with Gluetun, SearXNG, and Caddy; their presence does not verify the running deployment.
+Compose source files live in `<app>/compose.yaml`, under `/workspace` in code-server and `/mnt/tank/stacks` on the host. The repository has 15 stack directories, plus shared documentation, maintenance scripts, and hardware photos. TrueNAS Apps loads the on-disk Compose files; their presence does not verify the running deployment.
 
-Runtime state and secrets belong in `/mnt/tank/appdata`; user data belongs in `/mnt/tank/data`. Neither belongs in Git. Compose configurations include internal addresses and service mappings. See [Services](docs/services.md) for configuration prerequisites and outstanding checks.
+Runtime state and secrets belong in `/mnt/tank/appdata`, user data in `/mnt/tank/data`, and local backup archives in `/mnt/tank/backups`. These contents stay outside Git. Compose configurations include internal addresses and service mappings. See [services](docs/services.md) for source references and [operations](docs/operations.md) for the deployment workflow.
 
 ## Documentation
 
 | Document | What it covers |
 | --- | --- |
-| [Infrastructure](docs/infrastructure.md) | Hardware, storage, platform, and current networking |
+| [Infrastructure](docs/infrastructure.md) | Hardware, dataset layout, permissions, and networking |
 | [Services and clients](docs/services.md) | Service purposes, deployment, Android clients, and integrations |
 | [Local AI](docs/local-ai.md) | Local model setup notes and benchmark results |
-| [Decisions and lessons](docs/decisions-and-lessons.md) | Motivations, tradeoffs, and observed challenges |
+| [Decisions and lessons](docs/decisions-and-lessons.md) | Motivations, tradeoffs, and practical lessons |
+| [Migration history](docs/migrations.md) | The storage and application refactor, outcomes, and verification |
+| [Operations and troubleshooting](docs/operations.md) | Deployment workflow, shell contexts, and troubleshooting |
+| [Backups and snapshots](docs/backups.md) | Protection policies, schedules, and recovery checks |
+| [PostgreSQL recovery](docs/POSTGRES_RECOVERY.md) | Integrity checks and a manual database recovery procedure |
 | [Roadmap](docs/roadmap.md) | Planned improvements and unresolved details |
 
 Public diagrams show the layout without private addresses or service mappings.

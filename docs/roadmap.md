@@ -1,36 +1,42 @@
 # Roadmap
 
-[Back to overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Decisions](decisions-and-lessons.md)
+[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Backups](backups.md) · [Local AI](local-ai.md)
 
-These are the changes I want to make next. Backups come first; the rest doesn't have a fixed order or timeline.
+The application/storage migration, Hermes network setup, phone HTTPS access, and Prometheus reboot startup are complete. Snapshot policies and daily database jobs were added on November 4, 2026. These are the next maintenance and development priorities, with no fixed timeline.
 
-## Highest priority: backups and snapshots
+## Recovery verification and independent backups
 
-The HDD pool is mirrored, but I currently have **no independent backups or snapshots**.
+- Check the first unattended backup runs and checksum-check a newly scheduled set.
+- Observe retention once expired candidates exist; the initial dry run correctly had none.
+- Test a full isolated database restore and validate the application with its related files.
+- Choose an independent backup destination and copy the necessary databases, files, secrets, and CA state; test recovery from that copy.
+- Configure email alerts and verify delivery.
+- Decide whether to snapshot `tank/backups` and whether `tank/data/games` needs coverage; neither is covered by the ten-task snapshot policy.
 
-I need to decide what to back up, where to store it, and how long to keep it. I also want snapshots and a recovery process I can test. I'll document those choices and restore results as I put them in place.
+Email alerts, an offsite copy, and a full restore test are not yet in place. See [backups](backups.md) for the implemented policy and [the recovery runbook](POSTGRES_RECOVERY.md) for the manual procedure.
 
-## Networking
+## Network follow-ups
 
-- Find or build a custom router capable of 2.5 Gb/s throughput.
-- Possibly use the eero solely as a wireless access point.
-- Revisit the broader homelab network design during a future refactor.
+Hermes is the GL.iNet Flint 2 main router. Trusted, IoT, and guest networks work, and WireGuard handles remote access. The eero and Tailscale are retired.
 
-My spare older router only has 1 GbE ports, so it doesn't meet the throughput goal. I haven't chosen a replacement or custom OS. Reviewing the current Serve setup can wait until the broader refactor.
+- Record physical port assignments, inter-network firewall rules, and measured throughput.
+- Review printer and TV-to-Jellyfin access requirements, including device addresses, network placement, and necessary firewall rules.
 
-## Services and integrations
+Phone access for Immich, Bitwarden, and DAVx5 through private HTTPS already works with Caddy's internal CA. Publicly trusted DNS-01 certificates remain an option if a future client requires them.
 
-- Add an *Arr stack for media; I haven't chosen the components yet.
-- Connect Fidelity through [SimpleFIN](https://bridge.simplefin.org/) when compatibility returns.
+## Media automation and integrations
 
-## Documentation follow-ups
+No *Arr stack is deployed. Sonarr, Radarr, Prowlarr, and optional request/subtitle services are candidates; the final component list is still a design choice.
 
-- Add hardware photos without personal or network details in view.
-- Expand the documented storage paths into a full dataset and application storage layout.
-- Record troubleshooting work and what I learned from it.
+Before integration, inspect qBittorrent's actual save paths/categories, preserve Gluetun/PIA forwarding and isolation, and establish consistent container paths within `tank/data/media`. Verify hardlink imports. Existing Jellyfin and qBittorrent stacks are separate working definitions.
 
-I'm not planning more server hardware upgrades right now.
+Check Fidelity/SimpleFIN compatibility before enabling that integration.
 
-## Keeping the record accurate
+## Local AI benchmarks and maintenance
 
-As I finish changes, I'll update the relevant docs and remove them from this list. Credentials, personal data, and runtime state stay out of the public repository. Compose configurations include internal addresses and service mappings.
+Prometheus works after reboot with Q2_0, 64K context, and Ethernet preferred over Wi-Fi fallback. The [standard Q2_0 benchmark](local-ai.md#q2_0-standard-benchmark) is complete, with 12/12 sanity checks and no failed requests. It is the single performance baseline.
+
+- Document Prometheus's full systemd, fstab, and Netplan settings for recovery.
+- Review routine Ubuntu updates and hardware power-recovery settings as part of maintenance.
+
+RAM and AMD GPU upgrades remain exploratory.
