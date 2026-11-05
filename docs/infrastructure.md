@@ -80,6 +80,18 @@ Strata runs in Docker with AMD device access. Open WebUI runs on TrueNAS and con
 
 ## Networking and access
 
+```mermaid
+flowchart TD
+    Internet["Internet"] --- Hermes["Hermes<br/>Flint 2 · OpenWrt"]
+    Hermes --- Trusted["Trusted LAN"]
+    Hermes --- IoT["IoT network"]
+    Hermes --- Guest["Guest network"]
+    Trusted --- NAS["TrueNAS"]
+    Trusted --- AI["Prometheus"]
+```
+
+This shows logical network membership. Physical port assignments and inter-network firewall rules remain to be documented. For local and remote HTTPS connections, see the [service access flow](services.md#caddy-dns-and-trust).
+
 | Item | Configuration |
 | --- | --- |
 | Internet | 2 Gb/s fiber |

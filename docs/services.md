@@ -30,6 +30,16 @@ Crafty also publishes `8100` and TCP `25500–25600`. PostgreSQL and cache servi
 
 ## Caddy, DNS, and trust
 
+```mermaid
+flowchart LR
+    Local["Trusted LAN client"] -->|HTTPS| Caddy["Caddy on TrueNAS"]
+    Remote["Remote client"] -->|WireGuard| Hermes["Hermes"]
+    Hermes -->|HTTPS| Caddy
+    Caddy --> Apps["Application web services"]
+```
+
+Clients resolve `home.arpa` service names through Hermes and connect to Caddy over HTTPS. Remote clients reach the private services through WireGuard on Hermes.
+
 Caddy's source uses `tls internal` for every site. Client DNS must resolve the configured names to the proxy, and clients must trust its public root certificate. CA private keys and runtime state remain under `/mnt/tank/appdata/caddy/data`; the configuration also persists `/mnt/tank/appdata/caddy/config`.
 
 In addition to the application routes above, the Caddyfile contains:

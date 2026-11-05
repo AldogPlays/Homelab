@@ -10,19 +10,12 @@ The pages below cover the current setup, routine operations, and the migrations 
 
 ```mermaid
 flowchart LR
-    Remote["Remote devices"] -->|WireGuard| Router["Hermes<br/>GL.iNet Flint 2 · OpenWrt"]
-    Router --> Trusted["Trusted network"]
-    Router --> IoT["IoT network"]
-    Router --> Guest["Guest network"]
-    Trusted --> Proxy["Caddy<br/>Private HTTPS"]
-    Proxy --> Apps["TrueNAS Apps<br/>Git-managed Compose"]
-    Apps --> State["Application state<br/>and user-data datasets"]
-    Apps --> WebUI["Open WebUI"]
-    WebUI --> AI["Prometheus<br/>Ubuntu · Strata · AMD GPU"]
-    State --> Recovery["Local snapshots<br/>and database exports"]
+    Devices["Personal devices"] --- Router["Hermes<br/>Router"]
+    Router --- NAS["TrueNAS<br/>Apps and storage"]
+    Router --- AI["Prometheus<br/>Local AI"]
 ```
 
-Hermes is the main router, with working trusted, IoT, and guest networks. WireGuard on Hermes provides remote access. The eero is retired. Local services use `home.arpa` names and Caddy HTTPS; Immich, Bitwarden, and DAVx5 work on my phone through those URLs. The diagram shows relationships, not individual switch ports or firewall rules. See [infrastructure](docs/infrastructure.md) for hardware and storage details.
+Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. See the [network layout](docs/infrastructure.md#networking-and-access) and [service access flow](docs/services.md#caddy-dns-and-trust) for the details.
 
 ## Hardware gallery
 
