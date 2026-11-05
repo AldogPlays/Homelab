@@ -1,10 +1,10 @@
 # Local AI
 
-[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Services](services.md) · [Operations](operations.md)
+> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Services](services.md) · [Operations](operations.md)
 
 Prometheus runs Strata inference on a dedicated AMD GPU machine. Open WebUI on TrueNAS provides the browser interface. The working configuration serves Q2_0 with 64K context and starts successfully after reboot.
 
-Jump to the [benchmark](#q2_0-standard-benchmark), [repeat-run command](#run-command), or [runtime and maintenance](#runtime-and-maintenance).
+**On this page:** [Benchmark](#q2_0-standard-benchmark) · [Run command](#run-command) · [Runtime and maintenance](#runtime-and-maintenance)
 
 ## Serving layout
 
@@ -12,6 +12,9 @@ Jump to the [benchmark](#q2_0-standard-benchmark), [repeat-run command](#run-com
 flowchart LR
     Client["Browser"] --> UI["Open WebUI<br/>TrueNAS"]
     UI -->|OpenAI-compatible API| Strata["Strata · AMD GPU<br/>Prometheus"]
+
+    classDef host fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    class UI,Strata host
 ```
 
 Open WebUI connects to Strata through `/v1/models` and `/v1/chat/completions`. The [WebUI stack](../open-webui/compose.yaml) persists its backend data, disables Ollama integration, and is served through Caddy. [Networking](networking.md) covers client access and Ethernet/Wi-Fi routing; [infrastructure](infrastructure.md#prometheus-ai-host) records the hardware.
@@ -31,7 +34,7 @@ The standard Q2_0 run completed with **zero failed requests** and **12/12 sanity
 Values are medians from three repetitions. Median decode rates ranged from 36.5 to 49.7 tokens/s, while longer prompts incurred substantial startup latency. These loopback API measurements include reasoning and exclude Open WebUI overhead.
 
 <details>
-<summary>Full timing results, ranges, and sample counts</summary>
+<summary><strong>Full timing results, ranges, and sample counts</strong></summary>
 
 Values are medians with minimum–maximum ranges. Each performance case has three samples, except 16K first-answer latency, which has two.
 
@@ -46,7 +49,7 @@ The short prompt was about 80 tokens, so the report omits its prompt-processing 
 </details>
 
 <details>
-<summary>Run configuration and provenance</summary>
+<summary><strong>Run configuration and provenance</strong></summary>
 
 | Item | Benchmark configuration |
 | --- | --- |

@@ -1,6 +1,6 @@
 # Operations and troubleshooting
 
-[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Services](services.md) · [Database recovery](POSTGRES_RECOVERY.md)
+> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Services](services.md) · [Database recovery](POSTGRES_RECOVERY.md)
 
 Use this page for routine inspection, deployment, and focused troubleshooting. Commands identify where they run; check container names against the current deployment before using an example. Historical incidents explain the diagnostics, but do not establish a current outage.
 

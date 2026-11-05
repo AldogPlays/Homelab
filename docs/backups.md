@@ -1,6 +1,6 @@
 # Backups and snapshots
 
-[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Database recovery](POSTGRES_RECOVERY.md) · [Roadmap](roadmap.md)
+> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Database recovery](POSTGRES_RECOVERY.md) · [Roadmap](roadmap.md)
 
 The lab uses ZFS snapshots for filesystem history and PostgreSQL exports for database recovery. Both are stored locally on `tank`. The policies were configured on November 4, 2026; some execution timestamps fall on November 5 UTC.
 
@@ -56,7 +56,7 @@ The [backup script](../scripts/postgres-backup.sh) covers Nextcloud, Immich, Vau
 The jobs share a lock and invoke protected installed copies of the scripts. Editing the versioned source does not itself update those copies or change the TrueNAS cron configuration.
 
 <details>
-<summary>Archive layout and validation</summary>
+<summary><strong>Archive layout and validation</strong></summary>
 
 Each completed set has this layout:
 

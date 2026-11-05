@@ -1,6 +1,6 @@
 # Decisions and lessons
 
-[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Migration history](migrations.md) · [Roadmap](roadmap.md)
+> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Migration history](migrations.md) · [Roadmap](roadmap.md)
 
 The lab is built around everyday use, reused hardware, and configuration I can understand and maintain. This page explains the choices and lessons behind it. [Migration history](migrations.md) records the actual cutovers; the other guides describe the current setup.
 
@@ -13,7 +13,7 @@ Immich, Navidrome, and Audiobookshelf have taken over photo, music, and audioboo
 Reducing subscriptions and controlling where my data lives motivated the project. Maintenance and recovery became my responsibility, while services such as PIA and SimpleFIN still have a place in the setup.
 
 <details>
-<summary>Subscription costs avoided</summary>
+<summary><strong>Subscription costs avoided</strong></summary>
 
 These are the subscriptions I've replaced. The estimate uses U.S. monthly prices checked October 12, 2026, with assumed tiers rather than my old bills.
 

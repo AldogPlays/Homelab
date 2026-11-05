@@ -1,6 +1,6 @@
 # Networking and access
 
-[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Operations](operations.md) · [Roadmap](roadmap.md)
+> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Operations](operations.md) · [Roadmap](roadmap.md)
 
 Hermes, a GL.iNet Flint 2 running OpenWrt, is the main router. It provides three working networks, local DNS, and WireGuard remote access. Caddy on TrueNAS provides private HTTPS for the web applications.
 
@@ -14,6 +14,11 @@ flowchart TD
     Hermes --- Guest["Guest network"]
     Trusted --- NAS["TrueNAS"]
     Trusted --- AI["Prometheus"]
+
+    classDef host fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef router fill:#dcfce7,stroke:#16a34a,color:#14532d
+    class NAS,AI host
+    class Hermes router
 ```
 
 This is a logical layout. Physical switch-port assignments and detailed inter-network firewall rules have not yet been documented.
@@ -21,7 +26,7 @@ This is a logical layout. Physical switch-port assignments and detailed inter-ne
 | Component | Configuration |
 | --- | --- |
 | Internet | 2 Gb/s fiber |
-| Router | Hermes at `10.10.10.1`; OpenWrt 25.12.6 recorded during setup |
+| Router | Hermes at `10.10.10.1`, running OpenWrt |
 | Trusted LAN | `10.10.10.0/24`; TrueNAS and Prometheus are on this network |
 | IoT network | `10.10.20.0/24` |
 | Guest network | `10.10.30.0/24` |
@@ -40,6 +45,11 @@ flowchart LR
     Remote["Remote client"] -->|WireGuard| Hermes["Hermes"]
     Hermes -->|HTTPS| Caddy
     Caddy --> Apps["Application web services"]
+
+    classDef host fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef router fill:#dcfce7,stroke:#16a34a,color:#14532d
+    class Caddy,Apps host
+    class Hermes router
 ```
 
 Clients resolve `home.arpa` service names through Hermes and connect to Caddy over HTTPS. Away from home, WireGuard on Hermes provides access to the private services. Immich, Bitwarden, and DAVx5 work on my phone through these URLs.

@@ -1,6 +1,6 @@
 # Infrastructure
 
-[Overview](../README.md) · [Networking](networking.md) · [Services](services.md) · [Local AI](local-ai.md) · [Backups](backups.md)
+> [Overview](../README.md) · [Networking](networking.md) · [Services](services.md) · [Local AI](local-ai.md) · [Backups](backups.md)
 
 The lab has a TrueNAS application/storage host, a separate Ubuntu AI host, and Hermes, a GL.iNet Flint 2 running OpenWrt as the main router.
 
@@ -70,8 +70,8 @@ The mirror protects against a single data-drive failure. [Backups and snapshots]
 | Component | Configuration |
 | --- | --- |
 | Host / OS | `prometheus`, Ubuntu Server 26.04.1 LTS |
-| CPU | AMD Ryzen 7 7800X3D, 8 cores / 16 threads after BIOS troubleshooting |
-| Motherboard / BIOS | Gigabyte B650I AORUS ULTRA / F43c |
+| CPU | AMD Ryzen 7 7800X3D, 8 cores / 16 threads |
+| Motherboard | Gigabyte B650I AORUS ULTRA |
 | GPU | PowerColor Radeon RX 7800 XT, 16 GiB VRAM; AMD integrated graphics also present |
 | RAM / swap | 32 GB DDR5, about 29 GiB reported usable; 8 GiB swap |
 | Storage | Approximately 2 TB NVMe; 100 GB root LV and 1 TB ext4 AI-data LV |

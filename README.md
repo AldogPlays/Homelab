@@ -1,5 +1,7 @@
 # Homelab
 
+[Architecture](#architecture) · [Services](#what-i-run) · [Photos](#hardware-gallery) · [Documentation](#documentation)
+
 I run my personal cloud on a repurposed gaming PC with [TrueNAS](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media. A second machine, Prometheus, runs local AI models on an AMD GPU.
 
 I started this to replace recurring subscriptions and have more control over my data. This repository documents what I've built, how it works, and how I maintain it. Application configurations live alongside the documentation; runtime data and credentials stay outside Git.
@@ -11,6 +13,11 @@ flowchart LR
     Devices["Personal devices"] --- Router["Hermes<br/>Router"]
     Router --- NAS["TrueNAS<br/>Apps and storage"]
     Router --- AI["Prometheus<br/>Local AI"]
+
+    classDef host fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
+    classDef router fill:#dcfce7,stroke:#16a34a,color:#14532d
+    class NAS,AI host
+    class Router router
 ```
 
 Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. The [networking guide](docs/networking.md) explains network separation and local/remote access.
@@ -38,19 +45,22 @@ Click a photo to view it larger.
       <a href="assets/photos/gaming-pc-before-truenas.jpg">
         <img src="assets/photos/gaming-pc-before-truenas.jpg" alt="Original gaming PC with its discrete GPU installed" width="240">
       </a><br>
-      Gaming PC before TrueNAS, GPU removal, and storage upgrades.
+      <strong>The starting point</strong><br>
+      Gaming PC before the TrueNAS conversion.
     </td>
     <td width="33%" valign="top">
       <a href="assets/photos/wd-red-plus-6tb-pair.jpg">
         <img src="assets/photos/wd-red-plus-6tb-pair.jpg" alt="Two boxed WD Red Plus 6 TB hard drives" width="240">
       </a><br>
-      Two 6 TB WD Red Plus drives for the mirrored pool.
+      <strong>Mirrored storage</strong><br>
+      Two 6 TB WD Red Plus data drives.
     </td>
     <td width="33%" valign="top">
       <a href="assets/photos/case-during-conversion.jpg">
         <img src="assets/photos/case-during-conversion.jpg" alt="Disassembled NZXT H710 case during conversion" width="240">
       </a><br>
-      Case disassembled during the conversion.
+      <strong>The conversion</strong><br>
+      Case disassembled for the upgrades.
     </td>
   </tr>
 </table>

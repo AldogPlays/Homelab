@@ -1,6 +1,6 @@
 # Services and clients
 
-[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Operations](operations.md) · [Backups](backups.md)
+> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Operations](operations.md) · [Backups](backups.md)
 
 TrueNAS hosts the personal cloud, media services, and supporting tools. The 15 stacks below link directly to their Compose definitions. Those files are the reference for image versions, ports, mounts, and service identities; the [Caddyfile](../caddy/Caddyfile) defines web names and proxy routes.
 

@@ -1,6 +1,6 @@
 # Migration history
 
-[Overview](../README.md) · [Infrastructure](infrastructure.md) · [Operations](operations.md) · [Backups and snapshots](backups.md)
+> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Operations](operations.md) · [Backups and snapshots](backups.md)
 
 In late October and early November 2026, I moved the lab from application-specific storage under `tank/Apps` to Git-managed Compose definitions, separate application state, and shared user-data datasets. TrueNAS continued to manage the application lifecycle.
 

@@ -1,6 +1,6 @@
 # PostgreSQL recovery
 
-[Overview](../README.md) · [Backups and snapshots](backups.md) · [Operations](operations.md)
+> [Overview](../README.md) · [Backups and snapshots](backups.md) · [Operations](operations.md)
 
 Use this runbook to select, check, and restore the PostgreSQL backups configured on November 4, 2026. Check container versions and backup availability before use. A full restore test has not yet been performed.
 
