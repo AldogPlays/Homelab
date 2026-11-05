@@ -1,21 +1,14 @@
-# PostgreSQL Backup and Recovery — TrueNAS Homelab
+# PostgreSQL recovery
 
 [Overview](../README.md) · [Backups and snapshots](backups.md) · [Operations](operations.md)
 
 Use this runbook to select, check, and restore the PostgreSQL backups configured on November 4, 2026. Check container versions and backup availability before use. A full restore test has not yet been performed.
 
-## Scope and schedules
+## Before starting
 
-- Host: `truenas` (TrueNAS SCALE), pool: `tank`.
-- Logical backups: `/mnt/tank/backups/databases/<app>/<UTC_TIMESTAMP>/`.
-- Backup task: TrueNAS Cron Job `PostgreSQL Database Backups`, daily at **03:15 America/Los_Angeles**.
-- Retention task: TrueNAS Cron Job `PostgreSQL Backup Retention`, daily at **04:15 America/Los_Angeles**. Retains 30 days and always preserves at least the three newest complete sets per app.
-- Both scripts use `/mnt/tank/backups/.postgres-backup.lock` to avoid overlapping runs.
-- Backup script: `/mnt/tank/backups/bin/postgres-backup.sh`.
-- Retention script: `/mnt/tank/backups/bin/postgres-retention.sh`.
-- Versioned script sources: `/mnt/tank/stacks/scripts/`.
-- **Local-only protection:** database dumps and ZFS snapshots are on `tank`; there is no offsite copy yet.
-- **Restore test:** not yet performed. Archive/checksum checks do not prove a full restore will succeed.
+Run the inspection commands on the **TrueNAS host**. Completed sets live at `/mnt/tank/backups/databases/<app>/<UTC_TIMESTAMP>/`. [Backups and snapshots](backups.md) is the reference for schedules, retention, installed scripts, and coverage.
+
+Database recovery also needs compatible PostgreSQL versions/extensions, application files, and required external configuration. Use a separate empty database instance for the restore test; preserve production state until validation and a deliberate cutover.
 
 ## Databases
 
@@ -92,17 +85,14 @@ The `pg_restore --list` operation only displays the archive contents. Replace th
 6. **Recover application files only if needed.** Use TrueNAS **Datasets → Snapshots** to inspect or clone the relevant *child* dataset (`tank/data/files`, `tank/data/photos`, or the affected app's dataset). Align file timestamps with the database backup to avoid inconsistent application state. Prefer copying required files from a snapshot/clone rather than rolling back `tank/data` or `tank/appdata` wholesale.
 7. **Plan production cutover separately.** Stop the affected app, confirm a current safety copy, and use a reviewed application-specific procedure to replace its data. Then restart and validate the app. Preserve the previous state until successful.
 
-## Follow-up checks
+## Record the recovery result
 
-- Confirm the unattended 03:15 backup creates new timestamped sets and verify one with `sha256sum -c`.
-- Confirm the 04:15 retention task remains enabled; the retention script supports `--dry-run` for inspection.
-- Review disk use with `sudo zfs list -r tank/backups`.
-- Configure TrueNAS alert email and verify delivery. Keep Cron Job **Hide Standard Error** unchecked.
-- Add a snapshot policy for `tank/backups` if desired; remember that snapshots retain deleted files until the snapshots expire.
-- Arrange an offsite copy of the backups and necessary application data, then test a complete recovery.
+- Record the selected backup timestamp, checksum/archive results, and target PostgreSQL version/extensions.
+- Record application-level validation and any required file recovery, without including credentials or private records.
+- Update [backup verification status](backups.md#protection-at-a-glance) after a successful test; remaining protection work belongs in the [roadmap](roadmap.md#recovery-verification-and-independent-backups).
 
 ## References
 
-- PostgreSQL: https://www.postgresql.org/docs/18/app-pgrestore.html
-- PostgreSQL `psql` error handling: https://www.postgresql.org/docs/18/app-psql.html
-- TrueNAS snapshot management: https://www.truenas.com/docs/scale/26/datasets/snapshots/managesnapshots/
+- [PostgreSQL `pg_restore`](https://www.postgresql.org/docs/18/app-pgrestore.html)
+- [PostgreSQL `psql` error handling](https://www.postgresql.org/docs/18/app-psql.html)
+- [TrueNAS snapshot management](https://www.truenas.com/docs/scale/26/datasets/snapshots/managesnapshots/)

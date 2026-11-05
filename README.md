@@ -2,9 +2,7 @@
 
 I run my personal cloud on a repurposed gaming PC with [TrueNAS](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media. A second machine, Prometheus, runs local AI models on an AMD GPU.
 
-I started this to replace recurring subscriptions and have more control over my data. This repository records the setup, the decisions behind it, and the things I still need to improve.
-
-The pages below cover the current setup, routine operations, and the migrations that shaped it. Configuration files stay alongside their applications; runtime data and secrets live outside the repository.
+I started this to replace recurring subscriptions and have more control over my data. This repository documents what I've built, how it works, and how I maintain it. Application configurations live alongside the documentation; runtime data and credentials stay outside Git.
 
 ## Architecture
 
@@ -15,7 +13,20 @@ flowchart LR
     Router --- AI["Prometheus<br/>Local AI"]
 ```
 
-Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. See the [network layout](docs/infrastructure.md#networking-and-access) and [service access flow](docs/services.md#caddy-dns-and-trust) for the details.
+Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. The [networking guide](docs/networking.md) explains network separation and local/remote access.
+
+## What I run
+
+| Area | Services |
+| --- | --- |
+| Personal cloud | Nextcloud for files, calendar, contacts, and bookmarks; Immich for photos and videos; Vaultwarden for passwords |
+| Notes and budgeting | Joplin Server for notes synchronization; Actual Budget with SimpleFIN imports |
+| Media | Jellyfin for movies and TV; Audiobookshelf for purchased audiobooks; Navidrome for music |
+| Personal projects | Crafty 4 for Minecraft; LubeLogger for truck maintenance, modifications, and fuel |
+| Local AI | Open WebUI on TrueNAS, connected to Strata on Prometheus |
+| Supporting services | Caddy, code-server, SearXNG, and qBittorrent with Gluetun/PIA |
+
+The [service guide](docs/services.md) covers dependencies, clients, and links to all 15 Compose stacks. The [decisions and lessons](docs/decisions-and-lessons.md) explain the hardware reuse, storage design, and subscriptions this setup replaces.
 
 ## Hardware gallery
 
@@ -44,66 +55,29 @@ Click a photo to view it larger.
   </tr>
 </table>
 
-## What I run
-
-| Area | Services and workflows |
-| --- | --- |
-| Personal data | [Nextcloud](https://nextcloud.com/) for files, calendar, contacts, and bookmarks; [Immich](https://immich.app/) for automatic photo and video uploads; [Vaultwarden](https://github.com/dani-garcia/vaultwarden) for passwords |
-| Notes and budgeting | [Joplin](https://github.com/laurent22/joplin) Markdown notes synced through Joplin Server; [Actual Budget](https://actualbudget.org/) with SimpleFIN transaction imports |
-| Media | [Jellyfin](https://jellyfin.org/) for movies and TV, [Audiobookshelf](https://audiobookshelf.org/) for purchased audiobooks, [Navidrome](https://www.navidrome.org/) for music |
-| Personal projects | [Crafty 4](https://craftycontrol.com/) for a Minecraft server; [LubeLogger](https://lubelogger.com/) for truck maintenance, modifications, and fuel |
-| Local AI | Strata on Prometheus, accessed through [Open WebUI](https://github.com/open-webui/open-webui) on TrueNAS |
-| Supporting infrastructure | Caddy for private HTTPS, code-server for editing, SearXNG for search, and qBittorrent with Gluetun/PIA for downloads |
-
-I use a mix of web interfaces and dedicated apps, including [DAVx5](https://github.com/bitfireAT/davx5-ose) and [floccus](https://github.com/floccusaddon/floccus) with Nextcloud, [Navic](https://github.com/ssalggnikool/Navic) with Navidrome, and [AFinity](https://github.com/MakD/AFinity) with Jellyfin. I also built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), which I use with my own server.
-
-## Why it's set up this way
-
-- **Reuse existing hardware:** upgraded the former gaming PC's memory and storage, added a 2.5 GbE NIC, and removed its discrete GPU.
-- **Separate storage roles:** a dedicated SSD boots TrueNAS; two 6 TB HDDs form a mirrored data pool.
-- **Keep deployments understandable:** TrueNAS manages app lifecycle while Compose definitions live in Git, separate from runtime state and secrets.
-- **Make it useful every day:** the lab replaces Google Photos, YouTube Music, Audible, and other services I used to rely on.
-
-See [decisions and lessons](docs/decisions-and-lessons.md) for the reasoning and tradeoffs.
-
-## Limitations and next steps
-
-Local ZFS snapshots and daily PostgreSQL backup/retention jobs were newly configured on November 4. A manual backup run succeeded. Email alerts, an offsite copy, and a full restore test are still outstanding; scheduled execution is the next check for the new jobs. See [backups and snapshots](docs/backups.md) for coverage and limits.
-
-The [roadmap](docs/roadmap.md) covers recovery verification, network follow-ups, and a future *Arr stack; none is deployed yet. Prometheus starts successfully after reboot. Its completed [standard Q2_0 benchmark](docs/local-ai.md#q2_0-standard-benchmark) passed all 12 sanity checks with no failed requests; median decode rates were 36.5–49.7 tokens/s across short, 4K, and 16K cases. The report preserves output-cap and latency limits alongside those results.
-
-## Subscription costs avoided
-
-These are the subscriptions I've replaced. The estimate uses U.S. monthly prices checked October 12, 2026, with assumed tiers rather than my old bills.
-
-| Subscription dropped | Assumed plan | Monthly | Annualized |
-| --- | --- | ---: | ---: |
-| Google One | 100 GB | $1.99 | $23.88 |
-| YouTube Music Premium | Individual | $11.99 | $143.88 |
-| Netflix | Standard with ads | $8.99 | $107.88 |
-| Disney+ | With ads, new-subscriber rate | $12.49 | $149.88 |
-| **Estimated spending avoided** | | **$35.46** | **$425.52** |
-
-The annual figures are 12 monthly payments. These are avoided subscription costs, before tax, discounts, and the cost of running the lab. PIA and SimpleFIN are still part of my setup. My own media library also differs from a streaming service's catalog.
-
-## Repository configuration
-
-Compose source files live in `<app>/compose.yaml`, under `/workspace` in code-server and `/mnt/tank/stacks` on the host. The repository has 15 stack directories, plus shared documentation, maintenance scripts, and hardware photos. TrueNAS Apps loads the on-disk Compose files; their presence does not verify the running deployment.
-
-Runtime state and secrets belong in `/mnt/tank/appdata`, user data in `/mnt/tank/data`, and local backup archives in `/mnt/tank/backups`. These contents stay outside Git. Compose configurations include internal addresses and service mappings. See [services](docs/services.md) for source references and [operations](docs/operations.md) for the deployment workflow.
-
 ## Documentation
 
-| Document | What it covers |
-| --- | --- |
-| [Infrastructure](docs/infrastructure.md) | Hardware, dataset layout, permissions, and networking |
-| [Services and clients](docs/services.md) | Service purposes, deployment, Android clients, and integrations |
-| [Local AI](docs/local-ai.md) | Local model setup notes and benchmark results |
-| [Decisions and lessons](docs/decisions-and-lessons.md) | Motivations, tradeoffs, and practical lessons |
-| [Migration history](docs/migrations.md) | The storage and application refactor, outcomes, and verification |
-| [Operations and troubleshooting](docs/operations.md) | Deployment workflow, shell contexts, and troubleshooting |
-| [Backups and snapshots](docs/backups.md) | Protection policies, schedules, and recovery checks |
-| [PostgreSQL recovery](docs/POSTGRES_RECOVERY.md) | Integrity checks and a manual database recovery procedure |
-| [Roadmap](docs/roadmap.md) | Planned improvements and unresolved details |
+### Explore the setup
 
-Public diagrams show the layout without private addresses or service mappings.
+- [Infrastructure](docs/infrastructure.md): hardware, storage roles, and dataset layout.
+- [Networking and access](docs/networking.md): network segments, DNS, private HTTPS, and WireGuard.
+- [Services and clients](docs/services.md): applications, dependencies, media storage, and everyday use.
+- [Local AI](docs/local-ai.md): serving architecture, the Q2_0 benchmark, and runtime details.
+- [Backups and snapshots](docs/backups.md): protection coverage, schedules, and verification status.
+
+### Maintain the lab
+
+- [Operations and troubleshooting](docs/operations.md): deployment workflow, shell contexts, and diagnostic procedures.
+- [PostgreSQL recovery](docs/POSTGRES_RECOVERY.md): select, validate, and restore a database backup.
+- [Roadmap](docs/roadmap.md): outstanding checks and planned improvements.
+
+### Background
+
+- [Decisions and lessons](docs/decisions-and-lessons.md): why the lab is designed this way.
+- [Migration history](docs/migrations.md): completed changes and the problems encountered along the way.
+
+## Current status
+
+The storage migration, three-network setup, phone HTTPS access, and Prometheus reboot startup are working. The standard Q2_0 benchmark is complete.
+
+Local snapshots and daily PostgreSQL jobs were configured on November 4, 2026; initial snapshots and a manual backup succeeded. Unattended execution, a full restore test, email alerts, and an offsite copy remain follow-ups. Media automation with an *Arr stack is still planned.

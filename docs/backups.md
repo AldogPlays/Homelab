@@ -2,13 +2,22 @@
 
 [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Database recovery](POSTGRES_RECOVERY.md) · [Roadmap](roadmap.md)
 
-Snapshot policies and daily PostgreSQL backup/retention jobs were configured on November 4, 2026. Some execution timestamps fall on November 5 UTC. Initial snapshots and a manual database backup succeeded; unattended execution and pruning still need verification.
+The lab uses ZFS snapshots for filesystem history and PostgreSQL exports for database recovery. Both are stored locally on `tank`. The policies were configured on November 4, 2026; some execution timestamps fall on November 5 UTC.
 
-Protection is local to `tank`: ZFS snapshots preserve filesystem history, and logical PostgreSQL exports provide database backup archives. Neither supplies an independent copy if the entire pool or host is lost. Email alerts, an offsite copy, and a full restore test are not yet in place.
+## Protection at a glance
+
+| Layer | Purpose | Verification status |
+| --- | --- | --- |
+| Mirrored data drives | Survive a single data-drive failure | Configured; does not provide file history or an independent copy |
+| ZFS snapshots | Recover earlier filesystem state | First hourly snapshots observed; later schedules need checking |
+| PostgreSQL exports | Recover application databases | Manual run produced all five sets; unattended execution and expired-set pruning need checking |
+| Independent backup | Recover after loss of the pool or host | No offsite copy yet |
+
+A full restore test and email alerts are still outstanding. Use the [recovery runbook](POSTGRES_RECOVERY.md) to inspect or restore a database set, and the [roadmap](roadmap.md#recovery-verification-and-independent-backups) for remaining recovery work.
 
 ## Snapshot policy
 
-Ten enabled tasks use `auto-%Y-%m-%d_%H-%M` naming, recursive snapshots, and `allow_empty: true`. Schedules below follow the TrueNAS local timezone, America/Los_Angeles.
+Ten enabled tasks cover application state, selected user data, media, and repository history. All schedules use the TrueNAS local timezone, America/Los_Angeles.
 
 | Dataset scope | Schedule | Retention |
 | --- | --- | --- |
@@ -23,9 +32,11 @@ Ten enabled tasks use `auto-%Y-%m-%d_%H-%M` naming, recursive snapshots, and `al
 | `tank/stacks` | Daily, midnight | 30 days |
 | `tank/stacks` | First day of month, midnight | 12 months |
 
+Tasks use `auto-%Y-%m-%d_%H-%M` naming, recursive snapshots, and `allow_empty: true`.
+
 The first hourly execution created snapshots of `appdata` and its app datasets, plus `data`, `files`, and `photos`, at 15:00 on November 4. Daily, weekly, and monthly execution still need checking. A newly created snapshot can show `USED 0B` before changes cause it to retain blocks; this does not mean the source dataset is empty.
 
-The ten-task policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives under `tank/appdata/crafty-4`, covered by the appdata policy. An optional daily snapshot of `tank/backups` around 04:30 with seven-day retention remains a proposal.
+The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives in appdata and is covered there. A daily backup-dataset snapshot with seven-day retention is an option under consideration, not an enabled task.
 
 ## PostgreSQL logical backups
 
@@ -39,11 +50,13 @@ The [backup script](../scripts/postgres-backup.sh) covers Nextcloud, Immich, Vau
 | Retention schedule | Daily, 04:15, as root |
 | Versioned sources | Repository `scripts/` directory |
 | Backup root | `/mnt/tank/backups/databases` |
-| Shared lock | `/mnt/tank/backups/.postgres-backup.lock` |
 | Protected directories | Root-owned, mode `700` |
 | Installed operational scripts | Root-owned, mode `700` |
 
-The jobs invoke protected installed copies of the scripts. Editing the versioned source does not itself update those copies or change the TrueNAS cron configuration.
+The jobs share a lock and invoke protected installed copies of the scripts. Editing the versioned source does not itself update those copies or change the TrueNAS cron configuration.
+
+<details>
+<summary>Archive layout and validation</summary>
 
 Each completed set has this layout:
 
@@ -55,6 +68,8 @@ Each completed set has this layout:
 ```
 
 `database.dump` is a custom-format `pg_dump -Fc` archive. `globals.sql` contains PostgreSQL global objects and can include sensitive role password hashes. The script creates the files privately, renders the archive through `pg_restore -f /dev/null`, generates and checks hashes, then publishes the completed temporary directory by rename. Archive rendering and hashes do not prove that a full application restore will succeed.
+
+</details>
 
 A manual run successfully produced all five sets at `20261105T002105Z` (November 4 afternoon in Pacific time). The backup and retention cron jobs are enabled; their unattended execution still needs checking.
 
@@ -88,12 +103,4 @@ sudo find /mnt/tank/backups/databases -mindepth 3 -maxdepth 3 \
 
 Use the [runbook's checksum and archive checks](POSTGRES_RECOVERY.md#find-a-backup-read-only) on a selected set. A backup-directory listing alone does not prove integrity or execution by cron.
 
-## Follow-up verification
-
-- Verify an unattended backup run and a retention run with expired candidates.
-- Test a full isolated database restore and application-level recovery.
-- Create offsite copies or replication of backups and required application/user data.
-- Configure and test TrueNAS alert-email delivery. Keeping cron stderr visible alone does not establish notification delivery.
-- Decide whether to add a snapshot policy for `tank/backups`.
-
-The initial manual backup and policy setup are complete; these checks follow as the new schedules run. Recovery requires the appropriate database version/extensions and the related files and secrets; a database dump alone does not reconstruct the entire service.
+Recovery also requires compatible database versions/extensions and the related application files and credentials. A database dump alone does not reconstruct the entire service. Record new verification results here and keep remaining work in the [roadmap](roadmap.md#recovery-verification-and-independent-backups).

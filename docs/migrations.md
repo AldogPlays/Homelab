@@ -4,21 +4,25 @@
 
 In late October and early November 2026, I moved the lab from application-specific storage under `tank/Apps` to Git-managed Compose definitions, separate application state, and shared user-data datasets. TrueNAS continued to manage the application lifecycle.
 
-This history covers the refactor and its outcomes; see [infrastructure](infrastructure.md) and [services](services.md) for the current setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
+This page records completed changes, including the later network and AI-host work. Use [infrastructure](infrastructure.md), [networking](networking.md), and [services](services.md) for today's setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
+
+## Milestones
+
+| Period | Change |
+| --- | --- |
+| Late October–early November 2026 | Moved apps to Git-managed definitions and separated state from user data |
+| November 3 | Deleted the legacy `tank/Apps` dataset after dependency checks |
+| Early November | Replaced the eero with Hermes and moved Prometheus from Windows to Ubuntu |
+| November 4 | Added snapshot policies and daily PostgreSQL backup/retention jobs |
+| November 4 Pacific / November 5 UTC | Completed the standard Q2_0 benchmark |
 
 ## Deployment and storage refactor
 
-The refactor separated three responsibilities:
-
-| Host location | Purpose |
-| --- | --- |
-| `/mnt/tank/stacks` | Git repository, Compose definitions, and documentation; mounted at `/workspace` in code-server |
-| `/mnt/tank/appdata/<app>` | Persistent application state, databases, configuration, and secrets |
-| `/mnt/tank/data` | User files, photos, games, and shared media |
+The refactor separated versioned definitions, application state, and user data. The resulting [storage layout](infrastructure.md#storage-layout) remains the current design.
 
 Apps were deployed through TrueNAS **Install via YAML**, loading the Compose file stored in the repository. This kept configuration editable and versioned while retaining the TrueNAS Apps interface for deployment and lifecycle management. I kept each app directory at the repository root; adding another `stacks/` directory inside the repo would have changed existing include paths.
 
-Code-server used a separate `homelab_editor` identity, UID `3000` and GID `3001`, rather than the NAS administrator's identity. Effective write tests established access to the workspace and editor state. Other applications used their own service identities; `568:568` was common but was not applied universally.
+Code-server used a dedicated editor identity rather than the NAS administrator's identity. Effective write tests established workspace access. Other applications retained their own service identities; a single ownership rule was not applied to the entire tree.
 
 ## Application moves
 
@@ -45,7 +49,7 @@ Container destination: /mnt/tank/Apps/audiobookshelf/audiobooks
 
 The old-looking destination is intentional and remains in the [Compose source](../audiobookshelf/compose.yaml). It does not mount the retired host `tank/Apps` dataset. Changing that destination would require coordinating Audiobookshelf's stored library references.
 
-The initial media transfer stopped when the browser shell timed out. Inspection showed no remaining `rsync` process and an incomplete destination. An incremental copy resumed the transfer, followed by state comparisons and access checks. The final incremental run transferred about 5.6 GB of a roughly 31.6 GB source; its progress percentage described that run, not the completeness of the entire migration.
+The initial media transfer stopped when the browser shell timed out. Inspection showed no remaining `rsync` process and an incomplete destination. An incremental copy resumed the transfer, followed by state comparisons and access checks. Its progress percentage described that incremental run, not the completeness of the entire migration.
 
 ### Navidrome: distinguish host and application ports
 
@@ -59,7 +63,7 @@ Storage checks then found two separate problems: the default save path still poi
 
 ### Nextcloud: repair URLs after the network change
 
-Direct access on the new LAN address initially produced an untrusted-domain error. I set the allowed hosts to `nextcloud.home.arpa` and `10.10.10.10:30027`, and the CLI URL to `https://nextcloud.home.arpa`. Direct-IP access then reached the authenticated dashboard.
+Direct access on the new LAN initially produced an untrusted-domain error. Updating allowed hosts and the CLI URL for the new address and private HTTPS name restored access to the authenticated dashboard.
 
 DAVx5 setup was also resolved. It now works on my phone through the private HTTPS URL; the precise authorization fix and contact-group setting are not documented.
 
@@ -80,7 +84,25 @@ On November 3, I retired the legacy `tank/Apps` dataset after the application mo
 
 The remaining Compose reference was Audiobookshelf's container destination, not a host dependency. Subsequent `zfs list tank/Apps` reported that the dataset did not exist, and all 14 installed apps in the accompanying middleware query remained `RUNNING`.
 
-Pool allocation fell to roughly 978 GB at that observation. Some reclaimed space had been retained by legacy snapshots, explaining why ZFS `USED` figures had exceeded file-level `du` totals. These are historical measurements, not current capacity figures.
+Some reclaimed space had been retained by legacy snapshots, explaining why ZFS `USED` figures had exceeded file-level `du` totals. File-level deletion and pool-level space reclamation were separate checks.
+
+## Networking and service changes
+
+Hermes, the Flint 2 running OpenWrt, replaced the eero as the main router. Trusted, IoT, and guest networks were configured, and WireGuard became the remote-access path. Tailscale, AdGuard Home, File Browser, Jackett, and FlareSolverr are no longer used.
+
+Joplin moved from Nextcloud synchronization to Joplin Server. Immich, Bitwarden, and DAVx5 were verified through private HTTPS on the phone. Current connection details are in [networking and access](networking.md).
+
+## Prometheus: move to Ubuntu
+
+Prometheus moved from Windows to bare-metal Ubuntu Server in early November 2026. A dedicated ext4 LV was mounted at `/srv/ai` for model and runtime data.
+
+Linux initially exposed eight threads with SMT reported as `notsupported`, despite no explicit `nosmt` kernel option. A BIOS change restored eight cores / sixteen threads and SMT `on`. Gigabyte X3D Turbo Mode was suspected, but the exact responsible setting was not established.
+
+Ethernet initially had link without IPv4 DHCP configured in Netplan. Enabling DHCP and moving the reserved address to Ethernet restored access. Route metrics were then adjusted to prefer Ethernet while retaining Wi-Fi fallback.
+
+Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](operations.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
+
+The resulting Q2_0 setup completed the [standard benchmark](local-ai.md#q2_0-standard-benchmark), which is the single performance baseline.
 
 ## Recovery work after migration
 

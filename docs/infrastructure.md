@@ -1,8 +1,10 @@
 # Infrastructure
 
-[Overview](../README.md) · [Services](services.md) · [Local AI](local-ai.md) · [Backups](backups.md) · [Migration history](migrations.md)
+[Overview](../README.md) · [Networking](networking.md) · [Services](services.md) · [Local AI](local-ai.md) · [Backups](backups.md)
 
 The lab has a TrueNAS application/storage host, a separate Ubuntu AI host, and Hermes, a GL.iNet Flint 2 running OpenWrt as the main router.
+
+This page covers the machines and storage. Use [networking and access](networking.md) for addresses and connection paths, or [operations](operations.md) for deployment and troubleshooting.
 
 ## TrueNAS application and storage host
 
@@ -53,15 +55,15 @@ tank/                         ZFS pool/root dataset
 
 The pool is mounted beneath `/mnt/tank`. The repository appears at `/workspace` inside code-server. Runtime state, databases, secrets, and user data stay outside Git. Compose references to these paths document the deployment without including their contents.
 
-The legacy `tank/Apps` dataset was deleted after dependency checks and application cutovers on November 3. Audiobookshelf deliberately retains an old-looking **container destination** beneath `/mnt/tank/Apps`; its **host source** is the new shared media directory. Crafty's migrated server files live in `appdata/crafty-4/servers`, rather than in the otherwise reserved `data/games` dataset.
+Crafty's server files live in `appdata/crafty-4/servers`; `data/games` is reserved. The former `tank/Apps` layout is retired; see [migration history](migrations.md) for the cutover and [media storage](services.md#media-storage) for Audiobookshelf's preserved container path.
 
 Media directories share one ZFS filesystem to support the planned downloader/library hardlink workflow. Future movie, TV, and automation paths are plans until configured and checked; the existing qBittorrent source mounts only `media/torrents` at `/data/torrents`. See [services](services.md#media-storage) before designing additional mounts.
 
-## Permissions and recovery
+## Storage access and protection
 
-Code-server uses editor UID `3000`, GID `3001`. Application identities vary: several use `568:568`, PostgreSQL uses `999:999`, Crafty uses `1000:1000`, and Joplin Server uses `1001:1001`. Supplementary groups and dataset ACLs also affect access. App data was handled per service, without recursively changing the entire storage tree.
+Each application has its own service identity and dataset access. POSIX ownership, supplementary groups, and dataset ACLs all matter. The [permissions procedure](operations.md#storage-permissions) explains how to inspect effective access without recursively changing the storage tree.
 
-The mirror protects against a single data-drive failure. Periodic snapshots and PostgreSQL logical backups for five applications were added on November 4, 2026. The [backup reference](backups.md) covers exclusions, schedules, and verification; [PostgreSQL recovery](POSTGRES_RECOVERY.md) describes selecting and restoring an archive. Email alerts, an offsite copy, and a full restore test are not yet in place.
+The mirror protects against a single data-drive failure. [Backups and snapshots](backups.md) covers local history, database exports, exclusions, and recovery limits.
 
 ## Prometheus AI host
 
@@ -76,37 +78,4 @@ The mirror protects against a single data-drive failure. Periodic snapshots and 
 | AI storage mount | `/srv/ai`, on `/dev/ubuntu-vg/ai-data`; mount persistence observed after reboots |
 | Ethernet | Intel I225-V, `igc`, `enp13s0`, negotiated 2.5 Gb/s full duplex |
 
-Strata runs in Docker with AMD device access. Open WebUI runs on TrueNAS and connects to Strata across the LAN. Prometheus serves Q2_0 with 64K context, prefers Ethernet with Wi-Fi fallback, and starts successfully after reboot. [Local AI](local-ai.md) covers paths, serving settings, startup reliability, and benchmark results.
-
-## Networking and access
-
-```mermaid
-flowchart TD
-    Internet["Internet"] --- Hermes["Hermes<br/>Flint 2 · OpenWrt"]
-    Hermes --- Trusted["Trusted LAN"]
-    Hermes --- IoT["IoT network"]
-    Hermes --- Guest["Guest network"]
-    Trusted --- NAS["TrueNAS"]
-    Trusted --- AI["Prometheus"]
-```
-
-This shows logical network membership. Physical port assignments and inter-network firewall rules remain to be documented. For local and remote HTTPS connections, see the [service access flow](services.md#caddy-dns-and-trust).
-
-| Item | Configuration |
-| --- | --- |
-| Internet | 2 Gb/s fiber |
-| Hermes | GL.iNet Flint 2, main OpenWrt router/gateway at `10.10.10.1`; version 25.12.6 recorded during setup |
-| Trusted LAN | `10.10.10.0/24` |
-| IoT network | `10.10.20.0/24`; configured and working |
-| Guest network | `10.10.30.0/24`; configured and working |
-| TrueNAS | `10.10.10.10` |
-| Prometheus | Ethernet DHCP reservation `10.10.10.20`; preferred route metric 100 |
-| Prometheus fallback | Wi-Fi online with route metric 600; dynamic address |
-| Switch | TP-Link unmanaged eight-port 2.5 GbE switch |
-| Local DNS | Service names under `home.arpa`, managed in Hermes during HTTPS setup |
-| Private HTTPS | Caddy on TrueNAS, using its internal CA; routes are in the repository Caddyfile |
-| Remote access | WireGuard on Hermes |
-
-All three networks are configured and working. The eero is retired, so its former 1 Gb/s uplink bottleneck no longer describes this setup. Physical port assignments, detailed firewall rules, and end-to-end throughput remain documentation follow-ups.
-
-Tailscale, AdGuard Home, File Browser, Jackett, and FlareSolverr are retired. WireGuard provides remote access, while Gluetun/PIA handles qBittorrent's outbound VPN traffic. Immich, Bitwarden, and DAVx5 work through the private HTTPS URLs on my phone.
+Strata runs in Docker with AMD device access; Open WebUI on TrueNAS connects to it across the LAN. The [local AI guide](local-ai.md) covers model settings, startup, and the benchmark. Ethernet preference and Wi-Fi fallback are documented in [networking](networking.md#network-layout).
