@@ -6,6 +6,8 @@ The lab has a TrueNAS application/storage host, a separate Ubuntu AI host, and H
 
 This page covers the machines and storage. Use [networking and access](networking.md) for addresses and connection paths, or [operations](operations.md) for deployment and troubleshooting.
 
+**On this page:** [TrueNAS](#truenas-application-and-storage-host) · [Storage layout](#storage-layout) · [Access and protection](#storage-access-and-protection) · [Prometheus](#prometheus-ai-host)
+
 ## TrueNAS application and storage host
 
 My former NZXT BLD gaming PC runs TrueNAS Community Edition. The last documented OS release is TrueNAS SCALE 25.10.4.
@@ -30,7 +32,12 @@ TrueNAS Apps manages the application lifecycle. On-disk Compose files are loaded
 
 ## Storage layout
 
-The tree distinguishes ZFS datasets from ordinary directories. `<app>` represents each application's directory or dataset.
+Two kinds of storage appear in the tree:
+
+- **ZFS dataset:** a separate filesystem with its own properties, permissions, and snapshot policy.
+- **Ordinary directory:** a directory inside a dataset, sharing that filesystem.
+
+That boundary matters for snapshots and hardlinks. `<app>` represents each application's directory or dataset.
 
 ```text
 tank/                         ZFS pool/root dataset
@@ -53,7 +60,20 @@ tank/                         ZFS pool/root dataset
     └── bin/                  ordinary directory; protected operational scripts
 ```
 
-The pool is mounted beneath `/mnt/tank`. The repository appears at `/workspace` inside code-server. Runtime state, databases, secrets, and user data stay outside Git. Compose references to these paths document the deployment without including their contents.
+### How the paths map
+
+The pool is mounted beneath `/mnt/tank`. Dataset names, host paths, and container paths refer to different views of the storage:
+
+| Storage | TrueNAS host path | Inside code-server |
+| --- | --- | --- |
+| Git repository, `tank/stacks` | `/mnt/tank/stacks` | `/workspace` |
+| Persistent editor home | `/mnt/tank/appdata/code-server` | `/config` |
+
+For example, `tank/appdata/nextcloud` is a dataset name, while `/mnt/tank/appdata/nextcloud` is its host path.
+
+Runtime state, databases, secrets, and user data stay outside Git. Compose references to these paths document the deployment without including their contents.
+
+### Application-specific paths
 
 Crafty's server files live in `appdata/crafty-4/servers`; `data/games` is reserved. The former `tank/Apps` layout is retired; see [migration history](migrations.md) for the cutover and [media storage](services.md#media-storage) for Audiobookshelf's preserved container path.
 
@@ -61,7 +81,13 @@ Media directories share one ZFS filesystem to support the planned downloader/lib
 
 ## Storage access and protection
 
-Each application has its own service identity and dataset access. POSIX ownership, supplementary groups, and dataset ACLs all matter. The [permissions procedure](operations.md#storage-permissions) explains how to inspect effective access without recursively changing the storage tree.
+Each application has its own service identity and dataset access. Effective access depends on:
+
+- File ownership and Unix permission bits (POSIX permissions).
+- Supplementary groups.
+- Dataset access control lists (ACLs).
+
+The [permissions procedure](operations.md#storage-permissions) explains how to inspect effective access without recursively changing the storage tree.
 
 The mirror protects against a single data-drive failure. [Backups and snapshots](backups.md) covers local history, database exports, exclusions, and recovery limits.
 
@@ -74,7 +100,7 @@ The mirror protects against a single data-drive failure. [Backups and snapshots]
 | Motherboard | Gigabyte B650I AORUS ULTRA |
 | GPU | PowerColor Radeon RX 7800 XT, 16 GiB VRAM; AMD integrated graphics also present |
 | RAM / swap | 32 GB DDR5, about 29 GiB reported usable; 8 GiB swap |
-| Storage | Approximately 2 TB NVMe; 100 GB root LV and 1 TB ext4 AI-data LV |
+| Storage | Approximately 2 TB NVMe; 100 GB root logical volume (LV) and 1 TB ext4 AI-data LV |
 | AI storage mount | `/srv/ai`, on `/dev/ubuntu-vg/ai-data`; mount persistence observed after reboots |
 | Ethernet | Intel I225-V, `igc`, `enp13s0`, negotiated 2.5 Gb/s full duplex |
 

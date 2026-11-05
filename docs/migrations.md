@@ -6,6 +6,8 @@ In late October and early November 2026, I moved the lab from application-specif
 
 This page records completed changes, including the later network and AI-host work. Use [infrastructure](infrastructure.md), [networking](networking.md), and [services](services.md) for today's setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
 
+**On this page:** [Milestones](#milestones) · [Application moves](#application-moves) · [Legacy storage](#retiring-legacy-storage) · [Network changes](#networking-and-service-changes) · [Prometheus](#prometheus-move-to-ubuntu)
+
 ## Milestones
 
 | Period | Change |
@@ -40,6 +42,8 @@ Code-server used a dedicated editor identity rather than the NAS administrator's
 
 ### Audiobookshelf: preserve the container path
 
+**Outcome:** The host storage moved; the application's stored library path stayed valid.
+
 Audiobookshelf's database already referred to its original library path. I changed the host source while keeping the container destination:
 
 ```text
@@ -57,9 +61,11 @@ Navidrome's external port stayed `30043`, while its internal listening port chan
 
 ### qBittorrent: validate each part of the workflow
 
-Early checks proved VPN egress and a PIA-assigned port, but the forwarding callback initially returned `403 Forbidden`. A later check showed the listening port matched PIA's forwarded port and qBittorrent was bound to `tun0`. Localhost authentication bypass was enabled at that point for callbacks in the shared network namespace.
+**Networking.** Early checks proved VPN egress and a PIA-assigned port, but the forwarding callback initially returned `403 Forbidden`. A later check showed the listening port matched PIA's forwarded port and qBittorrent was bound to `tun0`. Localhost authentication bypass was enabled at that point for callbacks in the shared network namespace.
 
-Storage checks then found two separate problems: the default save path still pointed to `/downloads`, while the actual mount was `/data/torrents`, and UID `568` could not write to the torrent directory. A nonrecursive ownership correction on the specific empty torrent directories and a Web UI save-path correction resolved both issues. These checks covered routing, forwarding, and storage access; download/seeding and VPN-recovery behavior need their own tests after relevant changes.
+**Storage.** Checks then found two separate problems: the default save path still pointed to `/downloads`, while the actual mount was `/data/torrents`, and UID `568` could not write to the torrent directory. A nonrecursive ownership correction on the specific empty torrent directories and a Web UI save-path correction resolved both issues.
+
+**Verification limits.** These checks covered routing, forwarding, and storage access; download/seeding and VPN-recovery behavior need their own tests after relevant changes.
 
 ### Nextcloud: repair URLs after the network change
 
@@ -94,11 +100,17 @@ Joplin moved from Nextcloud synchronization to Joplin Server. Immich, Bitwarden,
 
 ## Prometheus: move to Ubuntu
 
-Prometheus moved from Windows to bare-metal Ubuntu Server in early November 2026. A dedicated ext4 LV was mounted at `/srv/ai` for model and runtime data.
+Prometheus moved from Windows to bare-metal Ubuntu Server in early November 2026. A dedicated logical volume (LV), formatted with ext4, was mounted at `/srv/ai` for model and runtime data.
 
-Linux initially exposed eight threads with SMT reported as `notsupported`, despite no explicit `nosmt` kernel option. A BIOS change restored eight cores / sixteen threads and SMT `on`. Gigabyte X3D Turbo Mode was suspected, but the exact responsible setting was not established.
+### CPU threads
+
+Simultaneous multithreading (SMT) lets a CPU core expose more than one hardware thread. Linux initially exposed eight threads with SMT reported as `notsupported`, despite no explicit `nosmt` kernel option. A BIOS change restored eight cores / sixteen threads and SMT `on`. Gigabyte X3D Turbo Mode was suspected, but the exact responsible setting was not established.
+
+### Ethernet and routing
 
 Ethernet initially had link without IPv4 DHCP configured in Netplan. Enabling DHCP and moving the reserved address to Ethernet restored access. Route metrics were then adjusted to prefer Ethernet while retaining Wi-Fi fallback.
+
+### Container startup
 
 Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](operations.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
 

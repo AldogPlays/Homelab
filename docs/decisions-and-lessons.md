@@ -4,6 +4,8 @@
 
 The lab is built around everyday use, reused hardware, and configuration I can understand and maintain. This page explains the choices and lessons behind it. [Migration history](migrations.md) records the actual cutovers; the other guides describe the current setup.
 
+**On this page:** [Everyday use and cost](#everyday-use-and-cost) · [Architecture choices](#architecture-choices) · [Maintenance lessons](#maintenance-lessons)
+
 ## Everyday use and cost
 
 The lab grew from services I actually use: Immich for photos, Navidrome for music, Audiobookshelf for purchased audiobooks, Nextcloud for files and personal information, and Vaultwarden for passwords. Joplin, Actual Budget, Minecraft, and vehicle records make it useful beyond media storage. I built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android) for my own hosted service.
@@ -33,11 +35,15 @@ The annual figures are 12 monthly payments. These are avoided subscription costs
 
 ### Reuse hardware, separate workloads
 
+**Design:** TrueNAS handles applications and storage; Prometheus handles model inference.
+
 I converted the gaming PC I already owned into a TrueNAS host: more RAM, mirrored data drives, a 2.5 GbE NIC, and no discrete GPU. The original SSD became the boot drive. This made useful storage infrastructure without replacing the whole machine.
 
-Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. The completed standard benchmark of the working Q2_0 setup provides its performance baseline, with twelve sanity checks passed and request/output limits documented alongside speed.
+Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. The completed [standard benchmark](local-ai.md#q2_0-standard-benchmark) of the working Q2_0 setup provides its performance baseline. Twelve sanity checks passed; the guide explains generation speed, the wait for an answer, and the request/output limits together.
 
 ### Keep configuration editable and deployment visible
+
+**Design:** Keep Compose files in Git and manage app lifecycles through TrueNAS.
 
 I chose TrueNAS-managed custom apps loading on-disk Compose files. The repository holds deployment definitions, while TrueNAS retains lifecycle visibility. This avoided introducing another application-management interface just to edit YAML.
 
@@ -47,9 +53,20 @@ Code-server uses a dedicated editor identity rather than the NAS administrator's
 
 ### Separate state, user data, and recoverable history
 
-The refactor established `stacks` for configuration, `appdata` for state/secrets, and `data` for user content. The later backup project added a separate `backups` location on the same pool. This makes mounts and protection policies easier to understand, but separation within one pool does not create an independent backup.
+**Design:** Give configuration, application state, user files, and backups distinct storage roles.
 
-The mirror provides disk redundancy. Periodic snapshots add local history, and native PostgreSQL exports create application database archives. Archive parsing and checksum verification check the backup files; a full restore test is still needed to validate recovery. An independent copy remains a separate requirement.
+| Location | Role | Introduced |
+| --- | --- | --- |
+| `stacks` | Configuration | Storage refactor |
+| `appdata` | Application state and secrets | Storage refactor |
+| `data` | User content | Storage refactor |
+| `backups` | Recoverable backup files | Later backup project |
+
+These locations share the same pool. The separation makes mounts and protection policies easier to understand, but does not create an independent backup.
+
+The mirror provides disk redundancy. Periodic snapshots add local history, and native PostgreSQL exports create application database archives.
+
+Reading an archive with PostgreSQL tools checks whether it can be parsed, and checksums detect changes to its files. A full restore test is still needed to validate recovery. An independent copy remains a separate requirement.
 
 ## Maintenance lessons
 

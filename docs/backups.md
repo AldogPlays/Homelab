@@ -2,7 +2,17 @@
 
 > [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Database recovery](POSTGRES_RECOVERY.md) · [Roadmap](roadmap.md)
 
-The lab uses ZFS snapshots for filesystem history and PostgreSQL exports for database recovery. Both are stored locally on `tank`. The policies were configured on November 4, 2026; some execution timestamps fall on November 5 UTC.
+The lab has two forms of local recovery:
+
+- **ZFS snapshots** preserve filesystem state at a point in time, providing earlier versions of files.
+- **PostgreSQL exports** are archives of database contents that PostgreSQL tools can restore into a database instance.
+
+The policies were configured on November 4, 2026; some execution timestamps fall on November 5 UTC.
+
+> [!IMPORTANT]
+> Both are stored locally on `tank`. Neither provides a copy that survives loss of that pool.
+
+**On this page:** [Coverage](#protection-at-a-glance) · [Snapshots](#snapshot-policy) · [Database exports](#postgresql-logical-backups) · [Retention](#retention) · [Verification](#check-the-setup)
 
 ## Protection at a glance
 
@@ -19,22 +29,44 @@ A full restore test and email alerts are still outstanding. Use the [recovery ru
 
 Ten enabled tasks cover application state, selected user data, media, and repository history. All schedules use the TrueNAS local timezone, America/Los_Angeles.
 
+### Application state
+
+**Scope:** `tank/appdata`, including its app datasets.
+
+| Schedule | Retention |
+| --- | --- |
+| Hourly, minute 0 | 2 days |
+| Daily, midnight | 30 days |
+| Sunday, midnight | 8 weeks |
+
+### User data
+
+**Scope:** `tank/data`, excluding `tank/data/media` and `tank/data/games` from every schedule below.
+
+| Schedule | Retention |
+| --- | --- |
+| Hourly, minute 0 | 2 days |
+| Daily, midnight | 30 days |
+| Sunday, midnight | 12 weeks |
+| First day of month, midnight | 12 months |
+
+### Media and repository history
+
 | Dataset scope | Schedule | Retention |
 | --- | --- | --- |
-| `tank/appdata`, including its app datasets | Hourly, minute 0 | 2 days |
-| Same | Daily, midnight | 30 days |
-| Same | Sunday, midnight | 8 weeks |
-| `tank/data`, excluding `tank/data/media` and `tank/data/games` | Hourly, minute 0 | 2 days |
-| Same exclusions | Daily, midnight | 30 days |
-| Same exclusions | Sunday, midnight | 12 weeks |
-| Same exclusions | First day of month, midnight | 12 months |
 | `tank/data/media` | Daily, midnight | 14 days |
 | `tank/stacks` | Daily, midnight | 30 days |
 | `tank/stacks` | First day of month, midnight | 12 months |
 
-Tasks use `auto-%Y-%m-%d_%H-%M` naming, recursive snapshots, and `allow_empty: true`.
+### Task behavior and verification
 
-The first hourly execution created snapshots of `appdata` and its app datasets, plus `data`, `files`, and `photos`, at 15:00 on November 4. Daily, weekly, and monthly execution still need checking. A newly created snapshot can show `USED 0B` before changes cause it to retain blocks; this does not mean the source dataset is empty.
+Tasks use `auto-%Y-%m-%d_%H-%M` naming, recursive snapshots, and `allow_empty: true`. Recursive tasks include child datasets except the listed exclusions. Retention is how long each task keeps its snapshots; it is separate from the database-export retention policy below.
+
+The first hourly execution created snapshots of `appdata` and its app datasets, plus `data`, `files`, and `photos`, at 15:00 on November 4. Daily, weekly, and monthly execution still need checking.
+
+A newly created snapshot can show `USED 0B` before changes cause it to retain blocks; this does not mean the source dataset is empty.
+
+### Coverage gaps
 
 The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives in appdata and is covered there. A daily backup-dataset snapshot with seven-day retention is an option under consideration, not an enabled task.
 
@@ -53,10 +85,9 @@ The [backup script](../scripts/postgres-backup.sh) covers Nextcloud, Immich, Vau
 | Protected directories | Root-owned, mode `700` |
 | Installed operational scripts | Root-owned, mode `700` |
 
-The jobs share a lock and invoke protected installed copies of the scripts. Editing the versioned source does not itself update those copies or change the TrueNAS cron configuration.
+The jobs share a lock to prevent overlapping backup and retention runs. They invoke protected installed copies of the scripts. Editing the versioned source does not itself update those copies or change the TrueNAS cron configuration.
 
-<details>
-<summary><strong>Archive layout and validation</strong></summary>
+### Archive layout and validation
 
 Each completed set has this layout:
 
@@ -67,17 +98,37 @@ Each completed set has this layout:
 └── SHA256SUMS
 ```
 
-`database.dump` is a custom-format `pg_dump -Fc` archive. `globals.sql` contains PostgreSQL global objects and can include sensitive role password hashes. The script creates the files privately, renders the archive through `pg_restore -f /dev/null`, generates and checks hashes, then publishes the completed temporary directory by rename. Archive rendering and hashes do not prove that a full application restore will succeed.
+`database.dump` is a custom-format `pg_dump -Fc` archive. `globals.sql` contains PostgreSQL global objects and can include sensitive role password hashes.
 
-</details>
+Before marking a set complete, the script:
+
+1. Creates the files privately.
+2. Reads and converts the archive through `pg_restore -f /dev/null`, discarding the generated SQL.
+3. Generates and checks hashes.
+4. Renames the temporary directory to its completed timestamped name.
+
+Reading the archive and checking hashes do not prove that a full application restore will succeed.
+
+### Execution status
 
 A manual run successfully produced all five sets at `20261105T002105Z` (November 4 afternoon in Pacific time). The backup and retention cron jobs are enabled; their unattended execution still needs checking.
 
 ## Retention
 
-The [retention script](../scripts/postgres-retention.sh) targets completed timestamped directories older than 30 days, preserving at least the three newest structurally complete sets per app. It checks for exactly the three expected nonempty regular files and rejects symlinks or extra entries. It does not recompute hashes when choosing sets to retain or delete.
+The [retention script](../scripts/postgres-retention.sh) follows these rules:
 
-Dry run is the default; deletion requires `--delete`. Manual dump files, pre-migration archives, hidden partial directories, and other names are outside its timestamp-directory selection. The initial dry run found zero eligible sets. Deletion of an expired set has not yet been tested.
+| Rule | Behavior |
+| --- | --- |
+| Age | Targets completed timestamped directories older than 30 days |
+| Minimum history | Preserves at least the three newest structurally complete sets per app |
+| File structure | Requires exactly the three expected nonempty regular files; rejects symlinks and extra entries |
+| Integrity | Does not recompute hashes when choosing sets to retain or delete |
+
+Here, structurally complete means the expected files are present. It does not mean the database has passed a restore test.
+
+Dry run is the default; deletion requires `--delete`. Manual dump files, pre-migration archives, hidden partial directories, and other names are outside its timestamp-directory selection.
+
+**Verification status:** The initial dry run found zero eligible sets. Deletion of an expired set has not yet been tested.
 
 Snapshots of a backup dataset, if added later, can retain blocks after the retention script removes files. Account for both policies when assessing storage use.
 

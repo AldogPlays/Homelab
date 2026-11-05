@@ -2,9 +2,11 @@
 
 > [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Operations](operations.md) · [Backups](backups.md)
 
-TrueNAS hosts the personal cloud, media services, and supporting tools. The 15 stacks below link directly to their Compose definitions. Those files are the reference for image versions, ports, mounts, and service identities; the [Caddyfile](../caddy/Caddyfile) defines web names and proxy routes.
+TrueNAS hosts the personal cloud, media services, and supporting tools. The 15 stacks below link directly to their Compose definitions. Those files are the reference for image versions, ports, mounts, and the users/groups that containers run as (service identities); the [Caddyfile](../caddy/Caddyfile) defines web names and proxy routes.
 
 For HTTPS, DNS, and remote connections, start with [networking and access](networking.md#local-and-remote-service-access). For deployment or diagnostics, use [operations](operations.md).
+
+**On this page:** [Personal cloud](#personal-cloud) · [Media and games](#media-and-games) · [Supporting services](#supporting-services) · [Clients](#clients-and-everyday-use) · [Maintenance](#configuration-and-maintenance)
 
 ## Personal cloud
 
@@ -26,7 +28,7 @@ For HTTPS, DNS, and remote connections, start with [networking and access](netwo
 | [Navidrome](../navidrome/compose.yaml) | Music library | Application state and read-only shared music |
 | [Crafty 4](../crafty-4/compose.yaml) | Minecraft server management | Configuration, servers, imports, logs, and backups in appdata |
 
-No *Arr stack is deployed. Its eventual path and hardlink design is covered under [media storage](#media-storage) and the [roadmap](roadmap.md#media-automation-and-integrations).
+No *Arr media-automation stack (such as Sonarr or Radarr) is deployed. Its eventual path and hardlink design is covered under [media storage](#media-storage) and the [roadmap](roadmap.md#media-automation-and-integrations).
 
 ## Supporting services
 
@@ -58,7 +60,15 @@ Actual Budget's [bank-sync script](../actual-budget/scripts/actual-bank-sync.sh)
 
 ## Configuration and maintenance
 
-Application state lives outside Git in the [storage layout](infrastructure.md#storage-layout). Compose files reference external environment/secret files or mounted configuration. Start with the relevant stack to identify its required settings; inspect values locally only when needed. Keep credential values, private keys, and environment dumps out of documentation and diagnostic output.
+For storage mappings, see [Media storage](#media-storage). For downloader networking and callbacks, see [qBittorrent and VPN behavior](#qbittorrent-and-vpn-behavior).
+
+### State and external configuration
+
+Application state lives outside Git in the [storage layout](infrastructure.md#storage-layout). Paths such as `data/files` in the tables are relative to the TrueNAS host's `/mnt/tank`; they are not repository directories.
+
+Compose files reference external environment/secret files or mounted configuration. Start with the relevant stack to identify its required settings; inspect values locally only when needed. Keep credential values, private keys, and environment dumps out of documentation and diagnostic output.
+
+### Check the running application
 
 Public URLs, listen ports, proxy trust, and authentication can depend on runtime settings as well as Compose. The repository describes the intended deployment; verify the running app before changing it. PostgreSQL and cache services have no host port publications in these stacks.
 
@@ -77,13 +87,19 @@ These host paths are beneath `/mnt/tank`:
 
 Audiobookshelf's internal path is intentional: changing it can invalidate stored library references. It does not depend on the retired host dataset. See [the migration](migrations.md#audiobookshelf-preserve-the-container-path).
 
-Media directories share one ZFS filesystem for the planned hardlink workflow. New movie, TV, and torrent paths should remain ordinary directories within it where hardlinks are intended. A common container `/data` layout is a future *Arr design; qBittorrent currently mounts only the torrents directory.
+Media directories share one ZFS filesystem for the planned hardlink workflow. Hardlinks let a download and a library entry refer to the same stored file without keeping a second copy; they cannot cross filesystem boundaries. New movie, TV, and torrent paths should remain ordinary directories within it where hardlinks are intended. A common container `/data` layout is a future *Arr design; qBittorrent currently mounts only the torrents directory.
 
 ## qBittorrent and VPN behavior
 
-qBittorrent shares Gluetun's network namespace. Gluetun publishes the Web UI, permits its input port, and obtains a separate torrent listening port through PIA. The Web UI port and the dynamic torrent port serve different purposes.
+### Ports and interfaces
 
-The forwarding up/down hooks call qBittorrent's loopback API, selecting the VPN interface on startup and loopback on teardown. They rely on localhost authentication bypass in the shared namespace. Preserve LAN authentication, and test replacement callbacks before changing loopback authentication.
+qBittorrent shares Gluetun's network namespace: both containers use the same network interfaces and loopback address. Gluetun publishes the Web UI, permits its input port, and obtains a separate torrent listening port through PIA. The Web UI port and the dynamic torrent port serve different purposes.
+
+### Port-forwarding callbacks
+
+When VPN port forwarding starts or stops, Gluetun runs callbacks (the up/down hooks). These call qBittorrent's loopback API, selecting the VPN interface on startup and loopback on teardown. They rely on localhost authentication bypass in the shared namespace. Preserve LAN authentication, and test replacement callbacks before changing loopback authentication.
+
+### Verification after changes
 
 Migration checks verified VPN egress, a listening port matching PIA's assignment, and `tun0` selected. After relevant changes, also test downloads, seeding, and forwarding recovery. A former outbound-subnet exception was removed; new exceptions need a specific, tested purpose.
 

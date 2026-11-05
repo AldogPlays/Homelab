@@ -1,6 +1,6 @@
 # Homelab
 
-[Architecture](#architecture) · [Services](#what-i-run) · [Photos](#hardware-gallery) · [Documentation](#documentation)
+**On this page:** [Architecture](#architecture) · [Services](#what-i-run) · [Photos](#hardware-gallery) · [Documentation](#documentation) · [Status](#current-status)
 
 I run my personal cloud on a repurposed gaming PC with [TrueNAS](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media. A second machine, Prometheus, runs local AI models on an AMD GPU.
 
@@ -67,12 +67,19 @@ Click a photo to view it larger.
 
 ## Documentation
 
+| Start with… | Reading path |
+| --- | --- |
+| How the lab fits together | [Infrastructure](docs/infrastructure.md) → [Networking](docs/networking.md) → [Services](docs/services.md) |
+| Local AI and its performance | [Local AI](docs/local-ai.md), with terminology explained before the benchmark tables |
+| Maintenance or troubleshooting | [Operations](docs/operations.md) |
+| Recovering application data | [Backups](docs/backups.md) → [PostgreSQL recovery](docs/POSTGRES_RECOVERY.md) |
+
 ### Explore the setup
 
 - [Infrastructure](docs/infrastructure.md): hardware, storage roles, and dataset layout.
 - [Networking and access](docs/networking.md): network segments, DNS, private HTTPS, and WireGuard.
 - [Services and clients](docs/services.md): applications, dependencies, media storage, and everyday use.
-- [Local AI](docs/local-ai.md): serving architecture, the Q2_0 benchmark, and runtime details.
+- [Local AI](docs/local-ai.md): how Open WebUI and Strata fit together, what the Q2_0 benchmark measures, and runtime details.
 - [Backups and snapshots](docs/backups.md): protection coverage, schedules, and verification status.
 
 ### Maintain the lab
@@ -88,6 +95,12 @@ Click a photo to view it larger.
 
 ## Current status
 
-The storage migration, three-network setup, phone HTTPS access, and Prometheus reboot startup are working. The standard Q2_0 benchmark is complete.
+This status reflects the work recorded through November 4, 2026 Pacific time (November 5 UTC).
 
-Local snapshots and daily PostgreSQL jobs were configured on November 4, 2026; initial snapshots and a manual backup succeeded. Unattended execution, a full restore test, email alerts, and an offsite copy remain follow-ups. Media automation with an *Arr stack is still planned.
+| Status | Work |
+| --- | --- |
+| **Working** | Storage migration, three-network setup, phone HTTPS access, and Prometheus startup after reboot |
+| **Measured** | Standard Q2_0 benchmark complete |
+| **Configured; partly verified** | Local snapshots and daily PostgreSQL jobs, configured November 4, 2026; initial snapshots and a manual backup succeeded |
+| **Follow-ups** | Unattended execution, a full restore test, email alerts, and an offsite copy |
+| **Planned** | Media automation with an *Arr stack |

@@ -2,7 +2,10 @@
 
 > [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Services](services.md) · [Database recovery](POSTGRES_RECOVERY.md)
 
-Use this page for routine inspection, deployment, and focused troubleshooting. Commands identify where they run; check container names against the current deployment before using an example. Historical incidents explain the diagnostics, but do not establish a current outage.
+Use this page for routine inspection, deployment, and focused troubleshooting. Commands identify where they run; check container names against the current deployment before using an example.
+
+> [!NOTE]
+> The incidents below are historical examples. They explain the diagnostics and do not establish a current outage.
 
 ## Start here
 
@@ -29,6 +32,8 @@ Use [backups](backups.md#check-the-setup) to check protection jobs and [networki
 | code-server | `/workspace` | Its own persistent state is `/config` |
 | Caddy container | Caddyfile at `/etc/caddy/Caddyfile` | `/data` and `/config` |
 | Prometheus AI host | Strata Compose at `/srv/ai/strata/compose.yaml` | `/srv/ai/strata/data` |
+
+A host path and a container path can name the same underlying files differently. For example, `/mnt/tank/stacks/caddy/Caddyfile` on TrueNAS appears as `/workspace/caddy/Caddyfile` in code-server and `/etc/caddy/Caddyfile` in Caddy.
 
 `/workspace` is a code-server mount, not a TrueNAS host path. A missing path in the wrong shell does not establish that the host file is missing.
 
@@ -62,7 +67,9 @@ include:
 
 The placeholder must be replaced with the app directory. Keep app directories at their established repository paths so includes continue to resolve.
 
-Documentation work does not authorize deployment changes. Changes to Compose, Dockerfiles, Caddy configuration, maintenance scripts, or live infrastructure require explicit authorization. For an authorized deployment change:
+Documentation work does not authorize deployment changes. Changes to Compose, Dockerfiles, Caddy configuration, maintenance scripts, or live infrastructure require explicit authorization.
+
+### For an authorized deployment change
 
 1. Inspect the current image, ports, service identity, mounts, database dependencies, and data.
 2. Read the relevant Compose source and identify required external settings without printing credentials.
@@ -75,6 +82,8 @@ The `tank/Apps` migration is complete, and that dataset has been deleted. Use cu
 ## Caddy route present on host but missing in container
 
 **Symptom:** Jellyfin worked through its HTTP port, but private HTTPS failed with `SSL_ERROR_INTERNAL_ERROR_ALERT`. A reload reported unchanged configuration even though the editor showed a new route.
+
+### Compare the three file views
 
 Compare the file in all three contexts:
 
@@ -90,9 +99,15 @@ sudo docker exec ix-caddy-caddy-1 \
   grep -n 'jellyfin.home.arpa' /etc/caddy/Caddyfile
 ```
 
-Use `grep -n` on the host/editor if `rg` is unavailable. During the incident, the host and editor contained the route while the container did not. Caddy was bound to an individual file, as it remains in the [Compose definition](../caddy/compose.yaml).
+Use `grep -n` on the host/editor if `rg` is unavailable.
+
+### Interpret the result
+
+During the incident, the host and editor contained the route while the container did not. Caddy was bound to an individual file, as it remains in the [Compose definition](../caddy/compose.yaml).
 
 An editor save that replaces the host file may leave the single-file bind attached to old contents. That was the suspected cause here, but it was not proven. HTTPS was restored; the exact fix is not documented. Check host and container contents before choosing a remedy, and preserve Caddy's data and configuration.
+
+### Validate the container's configuration
 
 For a recurrence, establish which file Caddy can actually see before changing certificates or backend ports. Read-only validation on TrueNAS:
 
@@ -113,7 +128,17 @@ Preserve application-referenced container paths while changing host storage. Aud
 
 ## Storage permissions
 
-Code-server uses editor UID `3000`, GID `3001`. Several applications use `568:568`; PostgreSQL uses `999:999`, Crafty uses `1000:1000`, and Joplin Server uses `1001:1001`. Check the current Compose source and running identity rather than applying one ownership rule to all appdata.
+UID and GID are the numeric user and group IDs used for filesystem access. The recorded identities are:
+
+| Service | UID:GID |
+| --- | --- |
+| code-server editor | `3000:3001` |
+| Several applications | `568:568` |
+| PostgreSQL | `999:999` |
+| Crafty | `1000:1000` |
+| Joplin Server | `1001:1001` |
+
+Check the current Compose source and running identity rather than applying one ownership rule to all appdata.
 
 POSIX ownership and mode output alone did not explain all effective access because datasets could have ACLs. Check access as the application's actual identity, including relevant supplementary groups. A successful test on a directory establishes only that directory's access, not every nested file's permissions.
 
@@ -121,7 +146,7 @@ A qBittorrent migration issue combined an incorrect save path with insufficient 
 
 ## Git authentication
 
-Use the checkout's existing authentication. Code-server used a persistent SSH deploy key and repository-local `core.sshCommand`; other environments can use HTTPS authentication. An explicit SSH override once bypassed code-server's working key selection and caused `Permission denied (publickey)`.
+Use the checkout's existing authentication. This code-server checkout uses a persistent SSH deploy key selected by repository-local `core.sshCommand`. Other environments may have their own HTTPS authentication; that is not a reason to change this checkout's working SSH setup. An explicit SSH override once bypassed code-server's working key selection and caused `Permission denied (publickey)`.
 
 Inspect repository state in **code-server**:
 
@@ -134,7 +159,11 @@ Preserve working credential helpers and SSH configuration. If authentication fai
 
 ## Prometheus: healthy container, unreachable API
 
-**Symptom:** Strata was healthy inside Docker, but `docker port strata` showed no active publication and the host health URL refused connections. Desired `HostConfig.PortBindings` still listed the expected address.
+**Symptom:** Strata was healthy inside Docker, but `docker port strata` showed no active port publication and the host health URL refused connections.
+
+Port publication is Docker's mapping from a host address/port to a container port. Desired `HostConfig.PortBindings` still listed the expected address, but that configuration alone did not prove the mapping was active.
+
+### Check the host and container
 
 Read-only checks on **Prometheus**:
 
@@ -151,10 +180,16 @@ sudo journalctl -u strata-compose.service -b --no-pager -n 60
 curl -fsS --max-time 10 http://10.10.10.20:8080/health
 ```
 
+### Recorded resolution and limits
+
 Recreating the container restored the published port. The systemd unit now waits for the Ethernet address and runs Compose with `--force-recreate`. A manual service start, health request, and startup after reboot have all succeeded. The unit lives at `/etc/systemd/system/strata-compose.service` on Prometheus.
 
 Startup ordering and network reconfiguration were suspected contributors, not proven root causes. Distinguish a missing port publication from a model still loading: some early checks failed only a few seconds after recreation and passed once the model was ready. Docker process restart policy also does not establish recovery from a process that stays alive but becomes unhealthy.
 
 ## Open WebUI replies appear late
 
-During initial use, some replies appeared delayed in Open WebUI while backend requests had already completed. The cause was not isolated. Compare backend completion with visible answer timing; reasoning and tool activity can precede the final answer. Separate those timings before attributing the delay to model generation or changing the serving configuration.
+**Symptom:** During initial use, some replies appeared delayed in Open WebUI while backend requests had already completed. The cause was not isolated.
+
+**Compare:** Backend completion and visible answer timing. Reasoning and tool activity can precede the final answer. Separate those timings before attributing the delay to model generation or changing the serving configuration.
+
+The [benchmark timing definitions](local-ai.md#how-to-read-the-timings) explain first-token versus first-answer latency; those measurements bypass Open WebUI and cannot diagnose a browser delay on their own.
