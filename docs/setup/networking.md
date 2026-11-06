@@ -1,10 +1,8 @@
 # Networking and access
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Operations](../operations/README.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-Hermes, a GL.iNet Flint 2 running OpenWrt, is the main router. It provides three working networks, local DNS, and WireGuard remote access. Caddy on TrueNAS provides private HTTPS for the web applications.
-
-**On this page:** [Network layout](#network-layout) · [Local and remote access](#local-and-remote-service-access) · [DNS, certificates, and ports](#dns-certificates-and-proxy-routes)
+I use Hermes, a GL.iNet Flint 2 running OpenWrt, as my main router. It handles the trusted, IoT, and guest networks, local DNS, and WireGuard access from outside the house. Caddy on TrueNAS handles private HTTPS for my web apps.
 
 ## Network layout
 
@@ -23,7 +21,12 @@ flowchart TD
     class Hermes router
 ```
 
-This is a logical layout. Physical switch-port assignments and detailed inter-network firewall rules have not yet been documented.
+This shows how the networks fit together, rather than the physical wiring. I haven't documented the switch-port assignments or detailed firewall rules between networks. Printer and TV-to-Jellyfin access requirements, including device addresses, network placement, and the required firewall rules, are also not documented here.
+
+Prometheus prefers Ethernet over Wi-Fi. Its Strata API is bound to the Ethernet address, so Wi-Fi fallback alone does not make that API available over Wi-Fi.
+
+<details>
+<summary>Addresses, ports, and routing</summary>
 
 | Component | Configuration |
 | --- | --- |
@@ -41,7 +44,9 @@ This is a logical layout. Physical switch-port assignments and detailed inter-ne
 
 Prometheus uses lower route metrics to prefer Ethernet (100) over Wi-Fi (600) when both routes are available. This routing preference is separate from where a service listens: Strata's host API is bound to the reserved Ethernet address, so Wi-Fi fallback alone does not establish API availability through Wi-Fi.
 
-The Prometheus Ethernet link negotiated 2.5 Gb/s full duplex. Link speed and the fiber plan do not establish end-to-end throughput; that still needs measurement.
+The Prometheus Ethernet link negotiated 2.5 Gb/s full duplex. I haven't measured end-to-end throughput; the link speed and fiber service alone don't establish it.
+
+</details>
 
 ## Local and remote service access
 
@@ -58,13 +63,18 @@ flowchart LR
     class Hermes router
 ```
 
-DNS on Hermes translates each `home.arpa` service name into Caddy's address. The client connects to Caddy over HTTPS, and Caddy forwards the request to the corresponding application. This is Caddy's reverse-proxy role.
+When I open a `home.arpa` address, Hermes resolves the name to Caddy. Caddy accepts the HTTPS connection and passes the request to the right app. That is its job as a reverse proxy.
 
-Away from home, WireGuard on Hermes provides access to the private services. Immich, Bitwarden, and DAVx5 work on my phone through these URLs.
+Away from home, I connect through WireGuard on Hermes. Immich, Bitwarden, and DAVx5 work on my phone through the same private URLs.
 
 WireGuard is separate from the outbound Gluetun/PIA VPN used by qBittorrent. See [download VPN behavior](services.md#qbittorrent-and-vpn-behavior) for that path.
 
 ## DNS, certificates, and proxy routes
+
+My devices need to trust Caddy's public root certificate. Its existing CA state needs to stay intact during maintenance; only the public root certificate belongs on clients. Caddy adds no authentication of its own, so each app still controls access.
+
+<details>
+<summary>DNS, certificates, upstreams, and published ports</summary>
 
 ### Service names and certificate trust
 
@@ -87,4 +97,6 @@ Besides application routes, Caddy serves the TrueNAS and OpenWrt administration 
 
 Caddy adds no authentication of its own. Access controls depend on each application's settings.
 
-If a route is present in the editor but absent from the running proxy, use the [container-file diagnostic](../operations/troubleshooting.md#caddy-route-present-on-host-but-missing-in-container). The [roadmap](../roadmap.md#network-follow-ups) tracks firewall documentation, throughput tests, and device-access questions.
+I ran into a case where a route was visible in the editor but missing inside Caddy. The [troubleshooting notes](../operations/troubleshooting.md#caddy-route-present-on-host-but-missing-in-container) show how I compared the files.
+
+</details>

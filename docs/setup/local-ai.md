@@ -1,10 +1,8 @@
 # Local AI
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Operations](../operations/README.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-The local AI setup has two parts: **Open WebUI** on TrueNAS provides the browser interface, and **Strata** on Prometheus runs the model and generates responses using the AMD GPU. The current model is `qwen3.8-flash-next-q2_0`, configured with a 65,536-token (64K) context window. Startup after reboot has been verified.
-
-**On this page:** [Serving layout](#serving-layout) · [Performance](#performance-reference) · [Runtime](#runtime-and-maintenance)
+I use Open WebUI on TrueNAS to chat with a model running on Prometheus. Strata does the model work on Prometheus's AMD GPU. I'm running `qwen3.8-flash-next-q2_0` with a 65,536-token (64K) context window, and I've checked that it starts after a reboot.
 
 ## Serving layout
 
@@ -16,6 +14,9 @@ flowchart LR
     classDef host fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
     class UI,Strata host
 ```
+
+<details>
+<summary>API and model settings</summary>
 
 Open WebUI connects to Strata through `/v1/models` and `/v1/chat/completions`. The [WebUI stack](../../open-webui/compose.yaml) persists its backend data, disables Ollama integration, and is served through Caddy. [Networking](networking.md) covers client access and Ethernet/Wi-Fi routing; [infrastructure](infrastructure.md#prometheus-ai-host) records the hardware.
 
@@ -29,13 +30,18 @@ Three settings describe different parts of this setup:
 | 64K context | The configured token window for a request. Tokens are chunks of text, so 65,536 tokens is not a word count. A configured window does not establish how well the model uses all of it. |
 | Thinking enabled | The model generates reasoning as well as visible answer text. That reasoning consumes generated tokens and time before or alongside the answer. |
 
+</details>
+
 ## Performance reference
 
-The [standard Q2_0 benchmark](../benchmarks/q2-0.md) records the measured timings, output limits, sanity checks, run configuration, and command for repeating the test. It is the single performance baseline for this setup.
+I have one recorded performance baseline: the [standard Q2_0 benchmark](../benchmarks/q2-0.md). That page has the timings, output limits, sanity checks, exact run settings, and command. It measures Strata directly, not the browser experience.
 
 ## Runtime and maintenance
 
-These are recorded setup values; check the running versions after updates. The Strata image uses a moving tag. Its full Compose definition is managed on Prometheus, outside this repository.
+These are the versions and settings I recorded during setup. Strata uses a moving image tag, so the running version needs checking after updates. I keep its full Compose file on Prometheus, outside this repository.
+
+<details>
+<summary>Versions, paths, and container settings</summary>
 
 | Item | Configuration |
 | --- | --- |
@@ -72,12 +78,14 @@ The recorded container settings are:
 
 The 64K setting allocates context space. The standard suite's longest performance prompt was approximately 16K, so the recorded benchmark does not establish full-window answer quality.
 
+</details>
+
 ### Startup and diagnostics
 
 The systemd unit waits for the reserved Ethernet address on `enp13s0`, then invokes Compose with `up -d --force-recreate`. Both manual startup and startup after reboot have succeeded.
 
-Hardware power-outage recovery and recovery from an unhealthy-but-running process still need separate verification.
+I haven't verified recovery after a hardware power outage or from a process that stays running but becomes unhealthy. Those are separate from the successful reboot test.
 
 For a healthy model with an unreachable host API, use [Prometheus diagnostics](../operations/troubleshooting.md#prometheus-healthy-container-unreachable-api). For responses that appear late in the browser, compare backend completion with [Open WebUI timing](../operations/troubleshooting.md#open-webui-replies-appear-late).
 
-The earlier Windows-to-Ubuntu move, SMT fix, and Netplan changes are recorded in [migration history](../history/migrations.md#prometheus-move-to-ubuntu).
+I recorded the Windows-to-Ubuntu move, SMT fix, and Netplan changes in the [migration notes](../history/migrations.md#prometheus-move-to-ubuntu). The full systemd, fstab, and Netplan settings are not documented here. Routine maintenance checks include Ubuntu updates and hardware power-recovery settings.

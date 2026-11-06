@@ -1,8 +1,8 @@
 # Operations
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Roadmap](../roadmap.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-This is my starting point for routine inspection and authorized deployment work. The task table also links to focused troubleshooting procedures. Commands identify where they run; check container names against the current deployment before using an example.
+These are my notes for checking apps, working in the right shell, and deploying an approved change. Each command says where it runs. The container names are examples, so check them against the running setup.
 
 ## Start here
 
@@ -36,6 +36,11 @@ A host path and a container path can name the same underlying files differently.
 
 ## Inspect a TrueNAS app
 
+These checks show an app's status, image, user, mounts, and Compose validity. They do not deploy it. Full environment dumps and unreviewed request logs can expose credentials or session tokens.
+
+<details>
+<summary>App inspection commands</summary>
+
 Run these commands on the **TrueNAS host**, replacing the example app/container names as appropriate:
 
 ```bash
@@ -53,9 +58,11 @@ sudo docker compose -f /mnt/tank/stacks/navidrome/compose.yaml config --quiet
 
 These inspect status, selected metadata, mounts, and Compose validity. They do not deploy the source file. Avoid sharing full environment dumps or unreviewed request logs, which can include credentials or session tokens.
 
+</details>
+
 ## Deployment workflow
 
-Apps are deployed through TrueNAS **Apps → Install via YAML** with an on-disk include:
+I deploy apps through TrueNAS **Apps → Install via YAML**, using an include that points to the Compose file on disk:
 
 ```yaml
 include:
@@ -64,7 +71,10 @@ include:
 
 The placeholder must be replaced with the app directory. Keep app directories at their established repository paths so includes continue to resolve.
 
-Documentation work does not authorize deployment changes. Changes to Compose, Dockerfiles, Caddy configuration, maintenance scripts, or live infrastructure require explicit authorization.
+I keep documentation edits separate from deployment work. Changing Compose, Dockerfiles, Caddy configuration, maintenance scripts, or live infrastructure requires explicit approval.
+
+<details>
+<summary>Deployment checks</summary>
 
 ### For an authorized deployment change
 
@@ -76,9 +86,14 @@ Documentation work does not authorize deployment changes. Changes to Compose, Do
 
 The `tank/Apps` migration is complete, and that dataset has been deleted. Use current backups for recovery. The [migration history](../history/migrations.md) describes what was retained, reset, and retired.
 
+</details>
+
 ## Git authentication
 
-Use the checkout's existing authentication. This code-server checkout uses a persistent SSH deploy key selected by repository-local `core.sshCommand`. Other environments may have their own HTTPS authentication; that is not a reason to change this checkout's working SSH setup. An explicit SSH override once bypassed code-server's working key selection and caused `Permission denied (publickey)`.
+I use the checkout's existing authentication. In code-server, that is a persistent SSH deploy key selected by repository-local `core.sshCommand`. Other environments can have their own HTTPS authentication without changing this checkout. An explicit SSH override once bypassed the working key selection and caused `Permission denied (publickey)`.
+
+<details>
+<summary>Git checks and credential precautions</summary>
 
 Inspect repository state in **code-server**:
 
@@ -88,3 +103,5 @@ git -C /workspace diff --check
 ```
 
 Preserve working credential helpers and SSH configuration. If authentication fails, inspect the relevant local configuration without sharing key contents or credential-bearing URLs. Review explicit file diffs before committing; `.gitignore` cannot detect a secret embedded inside a tracked file.
+
+</details>

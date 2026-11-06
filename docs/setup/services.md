@@ -1,44 +1,42 @@
 # Services and clients
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Operations](../operations/README.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-TrueNAS hosts the personal cloud, media services, and supporting tools. The 15 stacks below link directly to their Compose definitions. Those files are the reference for image versions, ports, mounts, and the users/groups that containers run as (service identities); the [Caddyfile](../../caddy/Caddyfile) defines web names and proxy routes.
+These are the 15 app stacks I run on TrueNAS and the clients I use with them. Each app name links to its Compose file. Those files hold the image versions, ports, mounts, and service identities—the users and groups the containers run as. The [Caddyfile](../../caddy/Caddyfile) holds the web names and proxy routes.
 
-For HTTPS, DNS, and remote connections, start with [networking and access](networking.md#local-and-remote-service-access). For deployment or diagnostics, use [operations](../operations/README.md).
-
-**On this page:** [Personal cloud](#personal-cloud) · [Media and games](#media-and-games) · [Supporting services](#supporting-services) · [Clients](#clients-and-everyday-use) · [Media storage](#media-storage) · [Download VPN](#qbittorrent-and-vpn-behavior) · [Maintenance](#configuration-and-maintenance)
+My [network notes](networking.md#local-and-remote-service-access) cover HTTPS, DNS, and remote access. The [operations notes](../operations/README.md) cover deployment and checks.
 
 ## Personal cloud
 
-| Service and source | Purpose | State and dependencies |
-| --- | --- | --- |
-| [Nextcloud](../../nextcloud/compose.yaml) | Files, calendar, contacts, and bookmarks | PostgreSQL 17, Valkey, cron, and a [custom FFmpeg image](../../nextcloud/Dockerfile); user files in `data/files` |
-| [Immich](../../immich/compose.yaml) | Photo and video archive | PostgreSQL/VectorChord, Valkey, and OpenVINO machine learning; media in `data/photos` |
-| [Vaultwarden](../../vaultwarden/compose.yaml) | Password vault | PostgreSQL and persistent vault data |
-| [Joplin Server](../../joplin/compose.yaml) | Notes synchronization | PostgreSQL; Joplin clients sync here |
-| [Actual Budget](../../actual-budget/compose.yaml) | Budgeting with SimpleFIN imports | Persistent application state and a scheduled bank-sync job |
-| [LubeLogger](../../lubelogger/compose.yaml) | Truck maintenance, modifications, and fuel | PostgreSQL, application files, and data-protection keys |
+| Service | What I use it for |
+| --- | --- |
+| [Nextcloud](../../nextcloud/compose.yaml) | Files, calendar, contacts, and bookmarks |
+| [Immich](../../immich/compose.yaml) | Photo and video archive |
+| [Vaultwarden](../../vaultwarden/compose.yaml) | Password vault |
+| [Joplin Server](../../joplin/compose.yaml) | Notes synchronization |
+| [Actual Budget](../../actual-budget/compose.yaml) | Budgeting with SimpleFIN imports |
+| [LubeLogger](../../lubelogger/compose.yaml) | Truck maintenance, modifications, and fuel |
 
 ## Media and games
 
-| Service and source | Purpose | State and dependencies |
-| --- | --- | --- |
-| [Jellyfin](../../jellyfin/compose.yaml) | Movies and TV | Application state and read-only shared media |
-| [Audiobookshelf](../../audiobookshelf/compose.yaml) | Purchased audiobook library | Configuration/metadata and shared audiobooks |
-| [Navidrome](../../navidrome/compose.yaml) | Music library | Application state and read-only shared music |
-| [Crafty 4](../../crafty-4/compose.yaml) | Minecraft server management | Configuration, servers, imports, logs, and backups in appdata |
+| Service | What I use it for |
+| --- | --- |
+| [Jellyfin](../../jellyfin/compose.yaml) | Movies and TV |
+| [Audiobookshelf](../../audiobookshelf/compose.yaml) | Purchased audiobook library |
+| [Navidrome](../../navidrome/compose.yaml) | Music library |
+| [Crafty 4](../../crafty-4/compose.yaml) | Minecraft server management |
 
-No *Arr media-automation stack (such as Sonarr or Radarr) is deployed. Its eventual path and hardlink design is covered under [media storage](#media-storage) and the [roadmap](../roadmap.md#media-automation-and-integrations).
+Jellyfin and qBittorrent are separate working stacks. I don't run an *Arr media-automation stack such as Sonarr or Radarr.
 
 ## Supporting services
 
-| Service and source | Purpose | State and dependencies |
-| --- | --- | --- |
-| [Caddy](../../caddy/compose.yaml) | Private HTTPS reverse proxy | Persistent CA/runtime state and the repository Caddyfile |
-| [code-server](../../code-server/compose.yaml) | Browser editor and Git workspace | Persistent editor state; repository mounted at `/workspace` |
-| [Open WebUI](../../open-webui/compose.yaml) | Browser interface to local models | Persistent backend data; Strata runs on [Prometheus](local-ai.md); Ollama integration disabled in source |
-| [SearXNG](../../searxng/compose.yaml) | Metasearch | External settings and cache |
-| [qBittorrent + Gluetun](../../qbittorrent/compose.yaml) | Downloads through PIA | Shared network namespace, VPN port forwarding, and torrent storage |
+| Service | What I use it for |
+| --- | --- |
+| [Caddy](../../caddy/compose.yaml) | Private HTTPS reverse proxy |
+| [code-server](../../code-server/compose.yaml) | Browser editor and Git workspace |
+| [Open WebUI](../../open-webui/compose.yaml) | Browser interface to local models |
+| [SearXNG](../../searxng/compose.yaml) | Metasearch |
+| [qBittorrent + Gluetun](../../qbittorrent/compose.yaml) | Downloads through PIA |
 
 ## Clients and everyday use
 
@@ -54,11 +52,16 @@ No *Arr media-automation stack (such as Sonarr or Radarr) is deployed. Its event
 | qBittorrent | qBitController |
 | LubeLogger | [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), the client I built for my own server |
 
-These mobile workflows run on GrapheneOS/Android. Immich, Bitwarden, and DAVx5 have been verified through the private HTTPS names.
+I use these mobile clients on GrapheneOS/Android. I've verified Immich, Bitwarden, and DAVx5 through the private HTTPS names.
 
-Actual Budget's [bank-sync script](../../actual-budget/scripts/actual-bank-sync.sh) reads externally supplied credentials and runs daily at midnight as root. Fidelity/SimpleFIN compatibility remains a follow-up.
+Actual Budget's [bank-sync script](../../actual-budget/scripts/actual-bank-sync.sh) reads externally supplied credentials and runs daily at midnight as root. I haven't verified Fidelity/SimpleFIN compatibility.
 
 ## Media storage
+
+I keep media together under `/mnt/tank/data/media`. Audiobookshelf keeps its old container path because its library references depend on it; changing that path can break the library. It does not depend on the retired host dataset.
+
+<details>
+<summary>Media mounts and hardlinks</summary>
 
 These host paths are beneath `/mnt/tank`:
 
@@ -71,9 +74,16 @@ These host paths are beneath `/mnt/tank`:
 
 Audiobookshelf's internal path is intentional: changing it can invalidate stored library references. It does not depend on the retired host dataset. See [the migration](../history/migrations.md#audiobookshelf-preserve-the-container-path).
 
-Media directories share one ZFS filesystem for the planned hardlink workflow. Hardlinks let a download and a library entry refer to the same stored file without keeping a second copy; they cannot cross filesystem boundaries. New movie, TV, and torrent paths should remain ordinary directories within it where hardlinks are intended. A common container `/data` layout is a future *Arr design; qBittorrent currently mounts only the torrents directory.
+The media directories share one ZFS filesystem. Hardlinks let a download and a library entry refer to the same stored file without keeping a second copy; they cannot cross filesystem boundaries. That requires ordinary directories in the same filesystem, including movie, TV, or torrent paths used this way. qBittorrent currently mounts only the torrents directory; a shared container `/data` layout and hardlink imports are not configured or verified here.
+
+</details>
 
 ## qBittorrent and VPN behavior
+
+qBittorrent sends downloads through Gluetun and PIA. This is separate from the WireGuard connection I use to access the lab remotely. The forwarding callbacks depend on localhost authentication bypass; LAN authentication needs to stay enabled, and replacement callbacks need testing before changing loopback authentication.
+
+<details>
+<summary>VPN ports, callbacks, and checks</summary>
 
 ### Ports and interfaces
 
@@ -85,13 +95,36 @@ When VPN port forwarding starts or stops, Gluetun runs callbacks (the up/down ho
 
 ### Verification after changes
 
-Migration checks verified VPN egress, a listening port matching PIA's assignment, and `tun0` selected. After relevant changes, also test downloads, seeding, and forwarding recovery. A former outbound-subnet exception was removed; new exceptions need a specific, tested purpose.
+Migration checks verified VPN egress, a listening port matching PIA's assignment, and `tun0` selected. After relevant changes, also test downloads, seeding, and forwarding recovery. Check qBittorrent's actual save paths and categories alongside the Compose mounts, and preserve Gluetun/PIA forwarding and isolation. A former outbound-subnet exception was removed; new exceptions need a specific, tested purpose.
 
 Compose environment changes take effect when TrueNAS recreates the app. Coordinate qBittorrent and Gluetun because they share the namespace, and allow for interrupted downloads. This outbound VPN is separate from [WireGuard remote access](networking.md#local-and-remote-service-access).
 
+</details>
+
 ## Configuration and maintenance
 
-For storage mappings, see [Media storage](#media-storage). For downloader networking and callbacks, see [qBittorrent and VPN behavior](#qbittorrent-and-vpn-behavior).
+I keep app state and secrets outside Git. The [media mounts](#media-storage) and [VPN details](#qbittorrent-and-vpn-behavior) are above. Credential values, private keys, and environment dumps stay out of documentation and diagnostic output.
+
+<details>
+<summary>Dependencies and configuration notes</summary>
+
+| Service | State and dependencies |
+| --- | --- |
+| [Nextcloud](../../nextcloud/compose.yaml) | PostgreSQL 17, Valkey, cron, and a [custom FFmpeg image](../../nextcloud/Dockerfile); user files in `data/files` |
+| [Immich](../../immich/compose.yaml) | PostgreSQL/VectorChord, Valkey, and OpenVINO machine learning; media in `data/photos` |
+| [Vaultwarden](../../vaultwarden/compose.yaml) | PostgreSQL and persistent vault data |
+| [Joplin Server](../../joplin/compose.yaml) | PostgreSQL; Joplin clients sync here |
+| [Actual Budget](../../actual-budget/compose.yaml) | Persistent application state and a scheduled bank-sync job |
+| [LubeLogger](../../lubelogger/compose.yaml) | PostgreSQL, application files, and data-protection keys |
+| [Jellyfin](../../jellyfin/compose.yaml) | Application state and read-only shared media |
+| [Audiobookshelf](../../audiobookshelf/compose.yaml) | Configuration/metadata and shared audiobooks |
+| [Navidrome](../../navidrome/compose.yaml) | Application state and read-only shared music |
+| [Crafty 4](../../crafty-4/compose.yaml) | Configuration, servers, imports, logs, and backups in appdata |
+| [Caddy](../../caddy/compose.yaml) | Persistent CA/runtime state and the repository Caddyfile |
+| [code-server](../../code-server/compose.yaml) | Persistent editor state; repository mounted at `/workspace` |
+| [Open WebUI](../../open-webui/compose.yaml) | Persistent backend data; Strata runs on [Prometheus](local-ai.md); Ollama integration disabled in source |
+| [SearXNG](../../searxng/compose.yaml) | External settings and cache |
+| [qBittorrent + Gluetun](../../qbittorrent/compose.yaml) | Shared network namespace, VPN port forwarding, and torrent storage |
 
 ### State and external configuration
 
@@ -103,4 +136,6 @@ Compose files reference external environment/secret files or mounted configurati
 
 Public URLs, listen ports, proxy trust, and authentication can depend on runtime settings as well as Compose. The repository describes the intended deployment; verify the running app before changing it. PostgreSQL and cache services have no host port publications in these stacks.
 
-Nextcloud's cron service shares the application's HTML/data mounts. Future moves need an application-consistent file and database plan; old cutover comments in source describe the completed migration.
+Nextcloud's cron service shares the application's HTML/data mounts. Moving it requires keeping the files and database consistent with each other; old cutover comments in source describe the completed migration.
+
+</details>

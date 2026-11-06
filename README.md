@@ -1,10 +1,8 @@
 # Homelab
 
-**On this page:** [Architecture](#architecture) · [Services](#what-i-run) · [Documentation](#documentation) · [Status](#current-status) · [Photos](#hardware-gallery)
-
 I run my personal cloud on a repurposed gaming PC with [TrueNAS](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media. A second machine, Prometheus, runs local AI models on an AMD GPU.
 
-I started this to replace recurring subscriptions and have more control over my data. This repository documents what I've built, how it works, and how I maintain it. Application configurations live alongside the documentation; runtime data and credentials stay outside Git.
+I started this to replace recurring subscriptions and have more control over my data. These are my notes on what I run, how it works, and what I learned setting it up. The app configurations are here too; my data and credentials stay outside Git.
 
 ## Architecture
 
@@ -37,27 +35,13 @@ The [service guide](docs/setup/services.md) covers dependencies, clients, and li
 
 ## Documentation
 
-The [documentation index](docs/README.md) brings together the setup guides, maintenance procedures, recovery instructions, and history.
-
-| I need to… | Start here |
-| --- | --- |
-| Understand the lab | [Infrastructure](docs/setup/infrastructure.md) → [Networking](docs/setup/networking.md) → [Services](docs/setup/services.md) |
-| Use or maintain local AI | [Local AI](docs/setup/local-ai.md) and the [Q2_0 benchmark](docs/benchmarks/q2-0.md), with timing definitions before the results |
-| Maintain or troubleshoot a service | [Operations](docs/operations/README.md) and [Troubleshooting](docs/operations/troubleshooting.md) |
-| Recover application data | [Backups](docs/operations/backups.md) → [PostgreSQL recovery](docs/operations/postgres-recovery.md) |
-| Understand past choices or remaining work | [Decisions and lessons](docs/history/decisions-and-lessons.md), [Migration history](docs/history/migrations.md), and [Roadmap](docs/roadmap.md) |
+[All my notes are here](docs/README.md): the hardware and network, the apps I use, backups, troubleshooting, and how the lab got to this point.
 
 ## Current status
 
-This status reflects the work recorded through November 4, 2026 Pacific time (November 5 UTC).
+As of November 4, 2026 Pacific time (November 5 UTC), the storage migration, three-network setup, phone HTTPS access, and Prometheus startup after reboot are working. I also finished the standard Q2_0 benchmark.
 
-| Status | Work |
-| --- | --- |
-| **Working** | Storage migration, three-network setup, phone HTTPS access, and Prometheus startup after reboot |
-| **Measured** | Standard Q2_0 benchmark complete |
-| **Configured; partly verified** | Local snapshots and daily PostgreSQL jobs, configured November 4, 2026; initial snapshots and a manual backup succeeded |
-| **Follow-ups** | Unattended execution, a full restore test, email alerts, and an offsite copy |
-| **Planned** | Media automation with an *Arr stack |
+I set up local snapshots and daily PostgreSQL backup jobs on November 4. The first snapshots and a manual backup worked, but I haven't verified unattended runs or completed a full restore test. Email alerts and an offsite copy aren't set up. The [backup notes](docs/operations/backups.md) explain what is covered.
 
 ## Hardware gallery
 

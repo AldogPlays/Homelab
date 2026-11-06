@@ -1,16 +1,17 @@
 # Infrastructure
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Operations](../operations/README.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
 I use TrueNAS for applications and storage, a separate Ubuntu machine for local AI, and Hermes, a GL.iNet Flint 2 running OpenWrt, as the main router.
 
-This page covers the machines and storage. Use [networking and access](networking.md) for addresses and connection paths, or [operations](../operations/README.md) for deployment and troubleshooting.
-
-**On this page:** [TrueNAS](#truenas-application-and-storage-host) · [Storage layout](#storage-layout) · [Access and protection](#storage-access-and-protection) · [Prometheus](#prometheus-ai-host)
+The hardware and storage details are below. My [network notes](networking.md) cover addresses and access, and [operations](../operations/README.md) has the commands I use to inspect the setup.
 
 ## TrueNAS application and storage host
 
 My former NZXT BLD gaming PC runs TrueNAS Community Edition. The last documented OS release is TrueNAS SCALE 25.10.4.
+
+<details>
+<summary>TrueNAS hardware</summary>
 
 | Component | Hardware |
 | --- | --- |
@@ -26,11 +27,19 @@ My former NZXT BLD gaming PC runs TrueNAS Community Edition. The last documented
 | Power supply | be quiet! Pure Power 11 700W CM Gold |
 | Accessory | NZXT USB Expansion |
 
-The conversion replaced the original Seagate Barracuda 2 TB HDD, expanded memory from 16 to 32 GB, added the network adapter, and removed the MSI GeForce RTX 2070 SUPER VENTUS OC. I also cleaned the system and repositioned the drive tray for the new disks.
+</details>
 
-TrueNAS Apps manages the application lifecycle. On-disk Compose files are loaded through **Install via YAML**, keeping deployment definitions in Git. See [operations](../operations/README.md#deployment-workflow) for the include pattern and execution contexts.
+
+For the conversion, I replaced the original Seagate Barracuda 2 TB HDD with the mirrored data drives, expanded the RAM from 16 to 32 GB, and added the network adapter. I removed the MSI GeForce RTX 2070 SUPER VENTUS OC, cleaned the system, and repositioned the drive tray for the new disks.
+
+I manage the apps through TrueNAS **Install via YAML**, which loads the Compose files from this repository. That keeps the definitions in Git and app management in TrueNAS. The [operations notes](../operations/README.md#deployment-workflow) show the include pattern and where the commands run.
 
 ## Storage layout
+
+I keep the Compose files in `stacks`, app state and secrets in `appdata`, user files in `data`, and backup files in `backups`. They are all on the same `tank` pool. Runtime state, databases, secrets, and user data stay outside Git.
+
+<details>
+<summary>Dataset tree and exact paths</summary>
 
 Two kinds of storage appear in the tree:
 
@@ -77,7 +86,9 @@ Runtime state, databases, secrets, and user data stay outside Git. Compose refer
 
 Crafty's server files live in `appdata/crafty-4/servers`; `data/games` is reserved. The former `tank/Apps` layout is retired; see [migration history](../history/migrations.md) for the cutover and [media storage](services.md#media-storage) for Audiobookshelf's preserved container path.
 
-Media directories share one ZFS filesystem to support the planned downloader/library hardlink workflow. Future movie, TV, and automation paths are plans until configured and checked; the existing qBittorrent source mounts only `media/torrents` at `/data/torrents`. See [services](services.md#media-storage) before designing additional mounts.
+The media directories share one ZFS filesystem, so hardlinks can stay within that filesystem. qBittorrent currently mounts only `media/torrents` at `/data/torrents`. The [media storage notes](services.md#media-storage) list the actual mounts.
+
+</details>
 
 ## Storage access and protection
 
@@ -93,6 +104,11 @@ The mirror protects against a single data-drive failure. [Backups and snapshots]
 
 ## Prometheus AI host
 
+Prometheus is my separate Ubuntu AI machine, with a Ryzen 7 7800X3D, an RX 7800 XT, and 32 GB of DDR5 RAM.
+
+<details>
+<summary>Prometheus hardware and storage</summary>
+
 | Component | Configuration |
 | --- | --- |
 | Host / OS | `prometheus`, Ubuntu Server 26.04.1 LTS |
@@ -103,5 +119,8 @@ The mirror protects against a single data-drive failure. [Backups and snapshots]
 | Storage | Approximately 2 TB NVMe; 100 GB root logical volume (LV) and 1 TB ext4 AI-data LV |
 | AI storage mount | `/srv/ai`, on `/dev/ubuntu-vg/ai-data`; mount persistence observed after reboots |
 | Ethernet | Intel I225-V, `igc`, `enp13s0`, negotiated 2.5 Gb/s full duplex |
+
+</details>
+
 
 Strata runs in Docker with AMD device access; Open WebUI on TrueNAS connects to it across the LAN. The [local AI guide](local-ai.md) covers model settings, startup, and the benchmark. Ethernet preference and Wi-Fi fallback are documented in [networking](networking.md#network-layout).

@@ -1,16 +1,14 @@
 # PostgreSQL recovery
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Roadmap](../roadmap.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-Use this runbook to select and inspect a PostgreSQL backup, then restore it into a separate test instance. The backup jobs were configured on November 4, 2026. Check container versions and backup availability before use; a full restore test has not yet been performed.
+These are my notes for selecting a PostgreSQL backup, checking it, and restoring it into a separate test instance. I configured the backup jobs on November 4, 2026, but I haven't completed a full restore test. Container versions and backup availability need checking before using the commands.
 
 | Stage | What changes |
 | --- | --- |
 | Inspect a backup | Read-only checks on the TrueNAS host |
 | Test a restore | Writes to a separate PostgreSQL target |
 | Production cutover | A later, application-specific step after validation |
-
-**On this page:** [Preparation](#before-starting) · [Databases](#databases) · [Inspect a backup](#find-a-backup-read-only) · [Restore procedure](#recovery-procedure-deliberately-manual) · [Record results](#record-the-recovery-result)
 
 ## Before starting
 
@@ -23,6 +21,11 @@ Database recovery also needs compatible PostgreSQL versions/extensions, applicat
 
 ## Databases
 
+Each app needs a compatible PostgreSQL version and its related application files. Immich also needs its extension support. Backup files are root-owned and protected by restrictive permissions; keep them that way. `globals.sql` can contain sensitive password hashes.
+
+<details>
+<summary>Database versions, containers, and related files</summary>
+
 | App | Database container | PostgreSQL version at backup setup | Related application data |
 | --- | --- | --- | --- |
 | Nextcloud | `ix-nextcloud-postgres-1` | 17.11 | `tank/appdata/nextcloud`, `tank/data/files` |
@@ -31,7 +34,7 @@ Database recovery also needs compatible PostgreSQL versions/extensions, applicat
 | Joplin | `ix-joplin-postgres-1` | 18.6 | `tank/appdata/joplin` |
 | LubeLogger | `ix-lubelogger-postgres-1` | 18.6 | `tank/appdata/lubelogger` |
 
-Confirm container image versions before a future restore. Immich requires an appropriate PostgreSQL image with its extension support; a plain PostgreSQL image may not be sufficient.
+Confirm container image versions before restoring. Immich requires an appropriate PostgreSQL image with its extension support; a plain PostgreSQL image may not be sufficient.
 
 Each completed timestamped directory contains:
 
@@ -41,7 +44,14 @@ Each completed timestamped directory contains:
 
 Files are root-owned and protected by restrictive permissions. Keep them that way.
 
+</details>
+
 ## Find a backup (read-only)
+
+These checks run on the TrueNAS host and do not restore anything. Checksums and the archive index help inspect a set, but neither proves that a full restore will succeed.
+
+<details>
+<summary>Choose and check a backup</summary>
 
 ### 1. Choose an application and backup time
 
@@ -78,7 +88,14 @@ sudo dd if="$backup_set/database.dump" status=none |
 
 The `pg_restore --list` operation displays the archive's table of contents; it does not restore data or prove that a restore will succeed. The final `sed` command shows only the first 25 lines. Replace the PostgreSQL container with the matching app's container if inspecting another app's backup.
 
+</details>
+
 ## Recovery procedure (deliberately manual)
+
+Use a separate, empty target. Do not delete the existing database, overwrite application files, or roll back a whole parent dataset. Keep the damaged state until a recovery copy is available, and handle production cutover separately after validation.
+
+<details>
+<summary>Manual restore procedure</summary>
 
 ### 1. Identify the failure and recovery time
 
@@ -125,15 +142,17 @@ Check that the expected database, tables, and records exist. Where practical, st
 
 Use TrueNAS **Datasets → Snapshots** to inspect or clone the relevant *child* dataset (`tank/data/files`, `tank/data/photos`, or the affected app's dataset). Align file timestamps with the database backup to avoid inconsistent application state. Prefer copying required files from a snapshot/clone rather than rolling back `tank/data` or `tank/appdata` wholesale.
 
-### 7. Plan production cutover separately
+### 7. Handle production cutover separately
 
 Stop the affected app, confirm a current safety copy, and use a reviewed application-specific procedure to replace its data. Then restart and validate the app. Preserve the previous state until successful.
+
+</details>
 
 ## Record the recovery result
 
 - Record the selected backup timestamp, checksum/archive results, and target PostgreSQL version/extensions.
 - Record application-level validation and any required file recovery, without including credentials or private records.
-- Update [backup verification status](backups.md#protection-at-a-glance) after a successful test; remaining protection work belongs in the [roadmap](../roadmap.md#recovery-verification-and-independent-backups).
+- Update the [backup verification notes](backups.md#protection-at-a-glance) with the result of a successful test.
 
 ## References
 

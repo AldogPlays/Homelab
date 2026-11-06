@@ -1,12 +1,10 @@
 # Migration history
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Current setup](../setup/infrastructure.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
 In late October and early November 2026, I moved the lab from application-specific storage under `tank/Apps` to Git-managed Compose definitions, separate application state, and shared user-data datasets. TrueNAS continued to manage the application lifecycle.
 
-This page records completed changes, including the later network and AI-host work. Use [infrastructure](../setup/infrastructure.md), [networking](../setup/networking.md), and [services](../setup/services.md) for today's setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
-
-**On this page:** [Milestones](#milestones) · [Storage refactor](#deployment-and-storage-refactor) · [App moves](#application-moves) · [HTTPS](#private-https) · [Legacy storage](#retiring-legacy-storage) · [Network changes](#networking-and-service-changes) · [Prometheus](#prometheus-move-to-ubuntu) · [Recovery work](#recovery-work-after-migration)
+These are the moves I've completed, including the network and AI-host changes. The [hardware](../setup/infrastructure.md), [network](../setup/networking.md), and [service notes](../setup/services.md) describe the current setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
 
 ## Milestones
 
@@ -20,13 +18,18 @@ This page records completed changes, including the later network and AI-host wor
 
 ## Deployment and storage refactor
 
-The refactor separated versioned definitions, application state, and user data. The resulting [storage layout](../setup/infrastructure.md#storage-layout) remains the current design.
+I separated the versioned definitions, app state, and user data. That [storage layout](../setup/infrastructure.md#storage-layout) is still what I use.
 
-Apps were deployed through TrueNAS **Install via YAML**, loading the Compose file stored in the repository. This kept configuration editable and versioned while retaining the TrueNAS Apps interface for deployment and lifecycle management. I kept each app directory at the repository root; adding another `stacks/` directory inside the repo would have changed existing include paths.
+I deployed the apps through TrueNAS **Install via YAML**, loading their Compose files from the repository. I could edit and version the configuration while keeping deployment and app management in TrueNAS. Each app directory stayed at the repository root because another `stacks/` directory inside the repo would have changed the existing include paths.
 
-Code-server used a dedicated editor identity rather than the NAS administrator's identity. Effective write tests established workspace access. Other applications retained their own service identities; a single ownership rule was not applied to the entire tree.
+I gave code-server a dedicated editor identity instead of the NAS administrator's identity and checked workspace access with write tests. The other apps kept their own service identities. I did not apply one ownership rule to the whole tree.
 
 ## Application moves
+
+I kept the app data I needed and deliberately started fresh where I didn't need the old state. Some moves also needed path, port, or permission fixes. The details below record what I kept, what I discarded, and what I actually checked.
+
+<details>
+<summary>Application-by-application migration details</summary>
 
 | Application | Approach | Outcome |
 | --- | --- | --- |
@@ -42,7 +45,7 @@ Code-server used a dedicated editor identity rather than the NAS administrator's
 
 ### Audiobookshelf: preserve the container path
 
-**Outcome:** The host storage moved; the application's stored library path stayed valid.
+I moved the host storage while keeping the application's stored library path valid.
 
 Audiobookshelf's database already referred to its original library path. I changed the host source while keeping the container destination:
 
@@ -61,17 +64,19 @@ Navidrome's external port stayed `30043`, while its internal listening port chan
 
 ### qBittorrent: validate each part of the workflow
 
-**Networking.** Early checks proved VPN egress and a PIA-assigned port, but the forwarding callback initially returned `403 Forbidden`. A later check showed the listening port matched PIA's forwarded port and qBittorrent was bound to `tun0`. Localhost authentication bypass was enabled at that point for callbacks in the shared network namespace.
+My early network checks confirmed VPN egress and a PIA-assigned port, but the forwarding callback returned `403 Forbidden`. A later check showed the listening port matching PIA's forwarded port, with qBittorrent bound to `tun0`. Localhost authentication bypass was enabled at that point for callbacks in the shared network namespace.
 
-**Storage.** Checks then found two separate problems: the default save path still pointed to `/downloads`, while the actual mount was `/data/torrents`, and UID `568` could not write to the torrent directory. A nonrecursive ownership correction on the specific empty torrent directories and a Web UI save-path correction resolved both issues.
+The storage checks found two separate problems: the default save path still pointed to `/downloads`, while the actual mount was `/data/torrents`, and UID `568` could not write to the torrent directory. A nonrecursive ownership correction on the specific empty torrent directories and a Web UI save-path correction resolved both issues.
 
-**Verification limits.** These checks covered routing, forwarding, and storage access; download/seeding and VPN-recovery behavior need their own tests after relevant changes.
+Those checks covered routing, forwarding, and storage access. They did not establish download/seeding or VPN-recovery behavior; those require their own tests after relevant changes.
 
 ### Nextcloud: repair URLs after the network change
 
 Direct access on the new LAN initially produced an untrusted-domain error. Updating allowed hosts and the CLI URL for the new address and private HTTPS name restored access to the authenticated dashboard.
 
 DAVx5 setup was also resolved. It now works on my phone through the private HTTPS URL; the precise authorization fix and contact-group setting are not documented.
+
+</details>
 
 ## Private HTTPS
 
@@ -81,7 +86,7 @@ Jellyfin exposed a useful troubleshooting case: direct HTTP worked, but HTTPS fa
 
 ## Retiring legacy storage
 
-On November 3, I retired the legacy `tank/Apps` dataset after the application moves. Before deletion, I checked:
+On November 3, I retired the legacy `tank/Apps` dataset after the app moves. Before deleting it, I checked:
 
 - Host bind sources for both running and stopped containers.
 - TrueNAS shares, cron jobs, rsync/cloud-sync/replication/snapshot tasks, and startup scripts that referenced the old path.
@@ -94,13 +99,16 @@ Some reclaimed space had been retained by legacy snapshots, explaining why ZFS `
 
 ## Networking and service changes
 
-Hermes, the Flint 2 running OpenWrt, replaced the eero as the main router. Trusted, IoT, and guest networks were configured, and WireGuard became the remote-access path. Tailscale, AdGuard Home, File Browser, Jackett, and FlareSolverr are no longer used.
+I replaced the eero with Hermes, the Flint 2 running OpenWrt, set up the trusted, IoT, and guest networks, and switched remote access to WireGuard. I no longer use Tailscale, AdGuard Home, File Browser, Jackett, or FlareSolverr.
 
-Joplin moved from Nextcloud synchronization to Joplin Server. Immich, Bitwarden, and DAVx5 were verified through private HTTPS on the phone. Current connection details are in [networking and access](../setup/networking.md).
+I moved Joplin sync from Nextcloud to Joplin Server and verified Immich, Bitwarden, and DAVx5 over private HTTPS on my phone. The [network notes](../setup/networking.md) have the current connection details.
 
 ## Prometheus: move to Ubuntu
 
-Prometheus moved from Windows to bare-metal Ubuntu Server in early November 2026. A dedicated logical volume (LV), formatted with ext4, was mounted at `/srv/ai` for model and runtime data.
+I moved Prometheus from Windows to bare-metal Ubuntu Server in early November 2026. I mounted a dedicated ext4 logical volume (LV) at `/srv/ai` for model and runtime data.
+
+<details>
+<summary>CPU threads, Ethernet, and startup fixes</summary>
 
 ### CPU threads
 
@@ -116,8 +124,10 @@ Strata sometimes lost active port publication during the network/reboot work. Re
 
 The resulting Q2_0 setup completed the [standard benchmark](../benchmarks/q2-0.md#q2_0-standard-benchmark), which is the single performance baseline.
 
+</details>
+
 ## Recovery work after migration
 
-On November 4, ten periodic snapshot tasks were enabled and the first hourly snapshots were observed. PostgreSQL-native logical backups were then added for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. A manual run produced all five backup sets successfully; backup and retention cron jobs were configured afterward.
+On November 4, I enabled ten periodic snapshot tasks and saw the first hourly snapshots. I then added PostgreSQL-native logical backups for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. A manual run produced all five sets successfully, and I configured the backup and retention cron jobs afterward.
 
-These policies provide local protection on `tank`. Email alerts, an offsite copy, and a full restore test remain outstanding. See [backups](../operations/backups.md) for coverage, schedules, and verification steps.
+These protect data locally on `tank`. I haven't configured email alerts, made an offsite copy, or completed a full restore test. My [backup notes](../operations/backups.md) have the coverage, schedules, and verification steps.

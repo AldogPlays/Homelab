@@ -1,33 +1,34 @@
 # Backups and snapshots
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Roadmap](../roadmap.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-The lab has two forms of local recovery:
+I use two kinds of local recovery:
 
 - **ZFS snapshots** preserve filesystem state at a point in time, providing earlier versions of files.
 - **PostgreSQL exports** are archives of database contents that PostgreSQL tools can restore into a database instance.
 
-The policies were configured on November 4, 2026; some execution timestamps fall on November 5 UTC.
+I set these up on November 4, 2026. Some execution timestamps fall on November 5 UTC.
 
 > [!IMPORTANT]
 > Both are stored locally on `tank`. Neither provides a copy that survives loss of that pool.
-
-**On this page:** [Coverage](#protection-at-a-glance) · [Snapshots](#snapshot-policy) · [Database exports](#postgresql-logical-backups) · [Retention](#retention) · [Verification](#check-the-setup)
 
 ## Protection at a glance
 
 | Layer | Purpose | Verification status |
 | --- | --- | --- |
 | Mirrored data drives | Survive a single data-drive failure | Configured; does not provide file history or an independent copy |
-| ZFS snapshots | Recover earlier filesystem state | First hourly snapshots observed; later schedules need checking |
-| PostgreSQL exports | Recover application databases | Manual run produced all five sets; unattended execution and expired-set pruning need checking |
-| Independent backup | Recover after loss of the pool or host | No offsite copy yet |
+| ZFS snapshots | Recover earlier filesystem state | First hourly snapshots observed; daily, weekly, and monthly runs unverified |
+| PostgreSQL exports | Recover application databases | Manual run produced all five sets; unattended execution and expired-set pruning unverified |
+| Independent backup | Recover after loss of the pool or host | No offsite copy |
 
-A full restore test and email alerts are still outstanding. Use the [recovery runbook](postgres-recovery.md) to inspect or restore a database set, and the [roadmap](../roadmap.md#recovery-verification-and-independent-backups) for remaining recovery work.
+I haven't completed a full restore test or configured email alerts. The [recovery notes](postgres-recovery.md) cover inspecting a backup and restoring it into a separate test instance.
 
 ## Snapshot policy
 
-Ten enabled tasks cover application state, selected user data, media, and repository history. All schedules use the TrueNAS local timezone, America/Los_Angeles.
+I have ten enabled snapshot tasks covering app state, selected user data, media, and the repository. They all use the TrueNAS local timezone, America/Los_Angeles.
+
+<details>
+<summary>Snapshot schedules and settings</summary>
 
 ### Application state
 
@@ -62,17 +63,22 @@ Ten enabled tasks cover application state, selected user data, media, and reposi
 
 Tasks use `auto-%Y-%m-%d_%H-%M` naming, recursive snapshots, and `allow_empty: true`. Recursive tasks include child datasets except the listed exclusions. Retention is how long each task keeps its snapshots; it is separate from the database-export retention policy below.
 
-The first hourly execution created snapshots of `appdata` and its app datasets, plus `data`, `files`, and `photos`, at 15:00 on November 4. Daily, weekly, and monthly execution still need checking.
+The first hourly execution created snapshots of `appdata` and its app datasets, plus `data`, `files`, and `photos`, at 15:00 on November 4. I haven't verified daily, weekly, or monthly execution.
 
 A newly created snapshot can show `USED 0B` before changes cause it to retain blocks; this does not mean the source dataset is empty.
 
+</details>
+
 ### Coverage gaps
 
-The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives in appdata and is covered there. A daily backup-dataset snapshot with seven-day retention is an option under consideration, not an enabled task.
+The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives in appdata and is covered there.
 
 ## PostgreSQL logical backups
 
-The [backup script](../../scripts/postgres-backup.sh) covers Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. The [recovery runbook](postgres-recovery.md) lists containers, version requirements, integrity checks, and the manual restore procedure.
+My [backup script](../../scripts/postgres-backup.sh) exports the databases for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. The [recovery notes](postgres-recovery.md) list the containers, version requirements, integrity checks, and manual restore procedure. These exports can contain sensitive role password hashes.
+
+<details>
+<summary>Database backup jobs and archive format</summary>
 
 | Item | Configuration |
 | --- | --- |
@@ -109,13 +115,18 @@ Before marking a set complete, the script:
 
 Reading the archive and checking hashes do not prove that a full application restore will succeed.
 
+</details>
+
 ### Execution status
 
-A manual run successfully produced all five sets at `20261105T002105Z` (November 4 afternoon in Pacific time). The backup and retention cron jobs are enabled; their unattended execution still needs checking.
+My manual run produced all five sets at `20261105T002105Z` (November 4 afternoon in Pacific time). The backup and retention cron jobs are enabled, but I haven't verified their unattended execution.
 
 ## Retention
 
-The [retention script](../../scripts/postgres-retention.sh) follows these rules:
+My [retention script](../../scripts/postgres-retention.sh) targets completed sets older than 30 days while keeping at least the three newest structurally complete sets per app. It defaults to a dry run; deletion requires `--delete`.
+
+<details>
+<summary>Retention rules and exclusions</summary>
 
 | Rule | Behavior |
 | --- | --- |
@@ -128,11 +139,18 @@ Here, structurally complete means the expected files are present. It does not me
 
 Dry run is the default; deletion requires `--delete`. Manual dump files, pre-migration archives, hidden partial directories, and other names are outside its timestamp-directory selection.
 
+</details>
+
 **Verification status:** The initial dry run found zero eligible sets. Deletion of an expired set has not yet been tested.
 
-Snapshots of a backup dataset, if added later, can retain blocks after the retention script removes files. Account for both policies when assessing storage use.
+Snapshots can retain blocks after files are removed, so snapshot retention and file retention have to be accounted for separately when assessing storage use. This policy does not snapshot the backup dataset.
 
 ## Check the setup
+
+The first manual backup and hourly snapshots worked. I haven't checksum-checked a newly scheduled backup set or tested expired-set deletion. A directory listing alone doesn't prove a backup is intact or that cron ran it.
+
+<details>
+<summary>Read-only commands and verification notes</summary>
 
 Run on the **TrueNAS host**. These queries read policy/state without changing it:
 
@@ -154,4 +172,6 @@ sudo find /mnt/tank/backups/databases -mindepth 3 -maxdepth 3 \
 
 Use the [runbook's checksum and archive checks](postgres-recovery.md#find-a-backup-read-only) on a selected set. A backup-directory listing alone does not prove integrity or execution by cron.
 
-Recovery also requires compatible database versions/extensions and the related application files and credentials. A database dump alone does not reconstruct the entire service. Record new verification results here and keep remaining work in the [roadmap](../roadmap.md#recovery-verification-and-independent-backups).
+Recovery also requires compatible database versions/extensions and the related application files and credentials. A database dump alone does not reconstruct the entire service. An independent recovery copy needs the necessary databases, files, secrets, and CA state, with recovery tested from that copy. I keep verification results here. For email-alert checks, keep cron stderr visible and verify actual delivery; configured alerts alone would not prove that messages arrive.
+
+</details>

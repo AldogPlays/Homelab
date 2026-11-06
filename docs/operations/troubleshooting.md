@@ -1,17 +1,20 @@
 # Troubleshooting
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Roadmap](../roadmap.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-These procedures come from problems I encountered while building and migrating the lab. Check the shell context and current container names before using a command.
+These are problems I ran into while setting up and migrating the lab, along with the checks I used. Check which shell a command belongs in and confirm the current container names before using it.
 
 > [!NOTE]
-> The incidents below are historical examples. They explain the diagnostics and do not establish a current outage.
-
-**On this page:** [Caddy](#caddy-route-present-on-host-but-missing-in-container) · [Media transfers](#interrupted-media-copy) · [Permissions](#storage-permissions) · [Prometheus API](#prometheus-healthy-container-unreachable-api) · [WebUI timing](#open-webui-replies-appear-late)
+> These are past incidents, not a list of current outages. I've kept the uncertain causes and missing details explicit.
 
 ## Caddy route present on host but missing in container
 
-**Symptom:** Jellyfin worked through its HTTP port, but private HTTPS failed with `SSL_ERROR_INTERNAL_ERROR_ALERT`. A reload reported unchanged configuration even though the editor showed a new route.
+Jellyfin worked through its HTTP port, but I got `SSL_ERROR_INTERNAL_ERROR_ALERT` over private HTTPS. Caddy reported unchanged configuration on reload even though the editor showed the new route.
+
+The host and editor had the route, but the container did not. A stale file bind after an editor save was a suspected cause, not a proven one. HTTPS was restored, but I didn't record the exact fix. Preserve Caddy's existing data, configuration, and CA state; only the public root certificate belongs on clients.
+
+<details>
+<summary>Compare the files and validate Caddy</summary>
 
 ### Compare the three file views
 
@@ -48,9 +51,11 @@ sudo docker exec ix-caddy-caddy-1 \
 
 A successful syntax check does not prove the file contains the intended route. Preserve Caddy's existing CA state; only the public root certificate belongs on clients.
 
+</details>
+
 ## Interrupted media copy
 
-During the Audiobookshelf migration, a browser-shell timeout left the destination incomplete. No `rsync` process remained. An incremental `rsync` resumed the transfer and subsequent comparisons verified copied application state.
+My browser shell timed out during the Audiobookshelf move, leaving an incomplete destination and no `rsync` process running. I resumed it with an incremental `rsync` and compared the copied app state afterward.
 
 For a long transfer, run it in a persistent session and verify that the transfer itself is inside that session. After a disconnect, inspect the process and destination before launching another copy. A final incremental run can transfer only a small fraction of the total library; its percentage is not a complete migration check.
 
@@ -60,6 +65,9 @@ Preserve application-referenced container paths while changing host storage. Aud
 
 UID and GID are the numeric user and group IDs used for filesystem access. The recorded identities are:
 
+<details>
+<summary>Recorded service identities</summary>
+
 | Service | UID:GID |
 | --- | --- |
 | code-server editor | `3000:3001` |
@@ -67,6 +75,9 @@ UID and GID are the numeric user and group IDs used for filesystem access. The r
 | PostgreSQL | `999:999` |
 | Crafty | `1000:1000` |
 | Joplin Server | `1001:1001` |
+
+</details>
+
 
 Check the current Compose source and running identity rather than applying one ownership rule to all appdata.
 
@@ -76,9 +87,14 @@ A qBittorrent migration issue combined an incorrect save path with insufficient 
 
 ## Prometheus: healthy container, unreachable API
 
-**Symptom:** Strata was healthy inside Docker, but `docker port strata` showed no active port publication and the host health URL refused connections.
+Strata was healthy inside Docker, but `docker port strata` showed no active port publication and the host health URL refused connections.
 
 Port publication is Docker's mapping from a host address/port to a container port. Desired `HostConfig.PortBindings` still listed the expected address, but that configuration alone did not prove the mapping was active.
+
+Recreating the container restored the port, and the systemd startup unit now waits for Ethernet and recreates it. I verified manual startup, the health request, and startup after reboot. Startup ordering and network changes were suspected contributors, not proven causes.
+
+<details>
+<summary>Prometheus checks and what resolved the incident</summary>
 
 ### Check the host and container
 
@@ -103,10 +119,12 @@ Recreating the container restored the published port. The systemd unit now waits
 
 Startup ordering and network reconfiguration were suspected contributors, not proven root causes. Distinguish a missing port publication from a model still loading: some early checks failed only a few seconds after recreation and passed once the model was ready. Docker process restart policy also does not establish recovery from a process that stays alive but becomes unhealthy.
 
+</details>
+
 ## Open WebUI replies appear late
 
-**Symptom:** During initial use, some replies appeared delayed in Open WebUI while backend requests had already completed. The cause was not isolated.
+When I first used Open WebUI, some replies appeared late even though the backend requests had finished. I didn't isolate the cause.
 
-**Compare:** Backend completion and visible answer timing. Reasoning and tool activity can precede the final answer. Separate those timings before attributing the delay to model generation or changing the serving configuration.
+The useful comparison is when the backend finishes versus when the answer becomes visible. Reasoning and tool activity can come before the final answer, so those timings need separating before blaming model generation or changing the serving configuration.
 
 The [benchmark timing definitions](../benchmarks/q2-0.md#how-to-read-the-timings) explain first-token versus first-answer latency; those measurements bypass Open WebUI and cannot diagnose a browser delay on their own.

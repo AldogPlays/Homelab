@@ -1,18 +1,16 @@
 # Decisions and lessons
 
-> [Homelab](../../README.md) · [Documentation](../README.md) · [Current setup](../setup/infrastructure.md)
+> [Homelab](../../README.md) · [Documentation](../README.md)
 
-I built the lab around everyday use, reused hardware, and configuration I can understand and maintain. This page explains the choices and lessons behind it. [Migration history](migrations.md) records the actual cutovers; the other guides describe the current setup.
-
-**On this page:** [Everyday use and cost](#everyday-use-and-cost) · [Architecture choices](#architecture-choices) · [Maintenance lessons](#maintenance-lessons)
+I built this around services I actually use, hardware I already had, and a setup I could understand and maintain. These are the choices that shaped it and the lessons I took from working on it. The [migration notes](migrations.md) cover the actual moves.
 
 ## Everyday use and cost
 
-The lab grew from services I actually use: Immich for photos, Navidrome for music, Audiobookshelf for purchased audiobooks, Nextcloud for files and personal information, and Vaultwarden for passwords. Joplin, Actual Budget, Minecraft, and vehicle records make it useful beyond media storage. I built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android) for my own hosted service.
+I use Immich for photos, Navidrome for music, Audiobookshelf for purchased audiobooks, Nextcloud for files and personal information, and Vaultwarden for passwords. Joplin, Actual Budget, Minecraft, and vehicle records make the lab useful beyond media storage. I also built [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android) for my own hosted service.
 
 Immich, Navidrome, and Audiobookshelf have taken over photo, music, and audiobook workflows I previously handled through Google Photos, YouTube Music, and Audible.
 
-Reducing subscriptions and controlling where my data lives motivated the project. Maintenance and recovery became my responsibility, while services such as PIA and SimpleFIN still have a place in the setup.
+I wanted fewer subscriptions and more control over where my data lives. That also made maintenance and recovery my responsibility. I still use services such as PIA and SimpleFIN.
 
 <details>
 <summary><strong>Subscription costs avoided</strong></summary>
@@ -35,7 +33,7 @@ The annual figures are 12 monthly payments. These are avoided subscription costs
 
 ### Reuse hardware, separate workloads
 
-**Design:** TrueNAS handles applications and storage; Prometheus handles model inference.
+I keep apps and storage on TrueNAS and model inference on Prometheus.
 
 I converted the gaming PC I already owned into a TrueNAS host: more RAM, mirrored data drives, a 2.5 GbE NIC, and no discrete GPU. The original SSD became the boot drive. This made useful storage infrastructure without replacing the whole machine.
 
@@ -43,17 +41,20 @@ Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI r
 
 ### Keep configuration editable and deployment visible
 
-**Design:** Keep Compose files in Git and manage app lifecycles through TrueNAS.
+I keep Compose files in Git and manage the apps through TrueNAS.
 
-I chose TrueNAS-managed custom apps loading on-disk Compose files. The repository holds deployment definitions, while TrueNAS retains lifecycle visibility. This avoided introducing another application-management interface just to edit YAML.
+I chose TrueNAS custom apps that load Compose files from disk. I can edit and version the definitions in Git while keeping app management visible in TrueNAS. I didn't need another management interface just to edit YAML.
 
 Each stack stays directly under the repository root because working include paths depend on that layout. The host repository is already `/mnt/tank/stacks`.
 
-Code-server uses a dedicated editor identity rather than the NAS administrator's identity. Application access is checked per service and dataset. An ACL can explain effective write access even when basic ownership output looks restrictive; recursively changing all app data would discard that distinction.
+I gave code-server its own editor identity instead of using the NAS administrator's identity. Access is checked per service and dataset. An ACL can allow writes even when basic ownership output looks restrictive, so changing ownership recursively across all app data would lose that distinction.
 
 ### Separate state, user data, and recoverable history
 
-**Design:** Give configuration, application state, user files, and backups distinct storage roles.
+I keep configuration, app state, user files, and backups in separate places so their mounts and protection rules are easier to understand.
+
+<details>
+<summary>Storage roles and when I added them</summary>
 
 | Location | Role | Introduced |
 | --- | --- | --- |
@@ -62,38 +63,41 @@ Code-server uses a dedicated editor identity rather than the NAS administrator's
 | `data` | User content | Storage refactor |
 | `backups` | Recoverable backup files | Later backup project |
 
-These locations share the same pool. The separation makes mounts and protection policies easier to understand, but does not create an independent backup.
+</details>
+
+
+Those locations still share the same pool. Separating them does not create an independent backup.
 
 The mirror provides disk redundancy. Periodic snapshots add local history, and native PostgreSQL exports create application database archives.
 
-Reading an archive with PostgreSQL tools checks whether it can be parsed, and checksums detect changes to its files. A full restore test is still needed to validate recovery. An independent copy remains a separate requirement.
+PostgreSQL tools can check that an archive is readable, and checksums detect changes to its files. I haven't completed a full restore test or made an independent copy, so neither recovery nor protection from losing the pool is established by those checks.
 
 ## Maintenance lessons
 
 ### Preserve what the application depends on
 
-Audiobookshelf needed its stored library references preserved. The host library moved to shared media, while the container kept its old internal path. A path that looks untidy can encode an application dependency; normalizing it without checking the database would risk breaking the library.
+I kept Audiobookshelf's old internal path when I moved the host library to shared media because its database already referred to that path. A path can look untidy and still matter to the app; renaming it without checking the database could break the library.
 
 Navidrome kept the same external port while adopting its normal internal port. qBittorrent required both a matching save path and writable storage. These migrations reinforced the distinction between host paths, container paths, host ports, and application listening ports.
 
-Future downloader and library paths should share one media filesystem where hardlinks are intended. Being on the same ZFS pool alone is insufficient when paths cross dataset boundaries. The broader common-container-path design remains a future *Arr integration task.
+Hardlinks need the downloader and library paths to share one filesystem. Being on the same ZFS pool is not enough when the paths cross dataset boundaries.
 
 ### Check the layer that actually failed
 
-Jellyfin's HTTPS failure happened before an HTTP request could reach Jellyfin. The host and editor showed a route that Caddy's container could not see. The confirmed discrepancy was stale container-visible configuration; an editor replacement leaving a stale file bind was a plausible explanation, not a proven root cause.
+When Jellyfin's HTTPS connection failed, it happened before an HTTP request could reach Jellyfin. I found the route in the host file and editor, but Caddy's container could not see it. That confirmed stale container-visible configuration. An editor save leaving a stale file bind was a possible explanation, not a proven cause.
 
-Prometheus exposed another distinction: Docker's desired port-binding configuration could be present while active publication was absent. A healthy model process did not establish that the host API was reachable. Recreation restored publication, and a systemd startup unit was added. Startup after reboot now works.
+On Prometheus, I found that Docker could list the desired port binding without actually publishing the port. The model could be healthy while its host API was unreachable. Recreating the container restored publication, and I added a systemd startup unit. Startup after reboot now works.
 
 The [troubleshooting guide](../operations/troubleshooting.md) includes diagnostic commands for both incidents and distinguishes confirmed symptoms from suspected causes.
 
 ### Prefer simple, persistent tooling
 
-Code-server settled on a persistent repository SSH deploy key. An explicit override later caused an authentication failure by bypassing that working key selection. Preserve the authentication configured for each checkout rather than assuming all environments use the same method.
+I settled on a persistent repository SSH deploy key for code-server. An explicit override later bypassed the working key selection and broke authentication. Each checkout needs to keep its own working authentication; different environments don't necessarily use the same method.
 
-Private keys and credential values remain outside Git. Ignore rules help with matching files but cannot identify secrets embedded in otherwise valid configuration. Reviewing the actual diff is part of maintaining a public technical portfolio.
+I keep private keys and credential values outside Git and review the actual diff before publishing. Ignore rules can catch matching files, but they can't detect a secret embedded in otherwise valid configuration.
 
 ### Consider who a network change affects
 
-Earlier household-wide AdGuard filtering interfered with family use, so filtering was narrowed to personal devices through Tailscale at that stage. Both services are now retired. The lesson is to account for other users and provide practical exceptions.
+My earlier household-wide AdGuard filtering got in the way of family use, so I narrowed it to my own devices through Tailscale at that stage. Both services are now retired. That taught me to account for other users and provide practical exceptions.
 
-The original eero-to-switch link illustrated that upgrading a server NIC and switch does not prove throughput across the whole path. The eero is now retired; current capacity should be measured rather than inferred from the old bottleneck or individual link speeds. See [networking](../setup/networking.md) for the current layout.
+The original eero-to-switch link also showed why a faster server NIC and switch don't prove throughput across the whole connection. The eero is now retired. Its old bottleneck and individual link speeds don't establish current capacity; that takes a measurement. The [network notes](../setup/networking.md) show the current layout.
