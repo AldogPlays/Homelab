@@ -46,10 +46,10 @@ Jellyfin and qBittorrent are separate working stacks. I don't run an *Arr media-
 | Immich | Android photo/video uploads through the private HTTPS URL |
 | Vaultwarden | Bitwarden clients through private HTTPS |
 | Joplin Server | Joplin clients for class, personal, and professional Markdown notes; Nextcloud is no longer the sync target |
-| Audiobookshelf | Lissen on Android; purchased audiobooks prepared with OpenAudible |
+| Actual Budget | [Actual-Android](https://github.com/AldogPlays/Actual-Android), the Android client I built for my own budget server |
+| Audiobookshelf | [Lissen](https://github.com/GrakovNe/lissen-android) on Android; purchased audiobooks prepared with OpenAudible |
 | Navidrome | [Navic](https://github.com/ssalggnikool/Navic) on Android |
 | Jellyfin | [AFinity](https://github.com/MakD/AFinity) on Android |
-| qBittorrent | qBitController |
 | LubeLogger | [LubeLogger-Android](https://github.com/AldogPlays/LubeLogger-Android), the client I built for my own server |
 
 I use these mobile clients on GrapheneOS/Android. I've verified Immich, Bitwarden, and DAVx5 through the private HTTPS names.
