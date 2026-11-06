@@ -1,6 +1,6 @@
 # PostgreSQL recovery
 
-> [Overview](../README.md) · [Backups and snapshots](backups.md) · [Operations](operations.md)
+> [Homelab](../../README.md) · [Documentation](../README.md) · [Roadmap](../roadmap.md)
 
 Use this runbook to select and inspect a PostgreSQL backup, then restore it into a separate test instance. The backup jobs were configured on November 4, 2026. Check container versions and backup availability before use; a full restore test has not yet been performed.
 
@@ -10,7 +10,7 @@ Use this runbook to select and inspect a PostgreSQL backup, then restore it into
 | Test a restore | Writes to a separate PostgreSQL target |
 | Production cutover | A later, application-specific step after validation |
 
-**On this page:** [Preparation](#before-starting) · [Database reference](#databases) · [Inspect a backup](#find-a-backup-read-only) · [Restore procedure](#recovery-procedure-deliberately-manual) · [Record results](#record-the-recovery-result)
+**On this page:** [Preparation](#before-starting) · [Databases](#databases) · [Inspect a backup](#find-a-backup-read-only) · [Restore procedure](#recovery-procedure-deliberately-manual) · [Record results](#record-the-recovery-result)
 
 ## Before starting
 
@@ -133,7 +133,7 @@ Stop the affected app, confirm a current safety copy, and use a reviewed applica
 
 - Record the selected backup timestamp, checksum/archive results, and target PostgreSQL version/extensions.
 - Record application-level validation and any required file recovery, without including credentials or private records.
-- Update [backup verification status](backups.md#protection-at-a-glance) after a successful test; remaining protection work belongs in the [roadmap](roadmap.md#recovery-verification-and-independent-backups).
+- Update [backup verification status](backups.md#protection-at-a-glance) after a successful test; remaining protection work belongs in the [roadmap](../roadmap.md#recovery-verification-and-independent-backups).
 
 ## References
 

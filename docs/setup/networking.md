@@ -1,6 +1,6 @@
 # Networking and access
 
-> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Services](services.md) · [Operations](operations.md) · [Roadmap](roadmap.md)
+> [Homelab](../../README.md) · [Documentation](../README.md) · [Operations](../operations/README.md)
 
 Hermes, a GL.iNet Flint 2 running OpenWrt, is the main router. It provides three working networks, local DNS, and WireGuard remote access. Caddy on TrueNAS provides private HTTPS for the web applications.
 
@@ -68,13 +68,13 @@ WireGuard is separate from the outbound Gluetun/PIA VPN used by qBittorrent. See
 
 ### Service names and certificate trust
 
-The [Caddyfile](../caddy/Caddyfile) is the reference for service names and upstream destinations. Local DNS must resolve those names to Caddy. Each site uses `tls internal`: Caddy's own certificate authority (CA) issues the HTTPS certificates, so clients must trust Caddy's public root certificate. Preserve the existing CA state during maintenance; only the public root certificate belongs on clients.
+The [Caddyfile](../../caddy/Caddyfile) is the reference for service names and upstream destinations. Local DNS must resolve those names to Caddy. Each site uses `tls internal`: Caddy's own certificate authority (CA) issues the HTTPS certificates, so clients must trust Caddy's public root certificate. Preserve the existing CA state during maintenance; only the public root certificate belongs on clients.
 
 ### Backend connections
 
 An upstream is the backend destination Caddy contacts after receiving a client request. Most application upstreams are HTTP on TrueNAS. Crafty's upstream and the OpenWrt administration upstream use HTTPS with upstream certificate verification disabled in the current source. Nextcloud also has CardDAV/CalDAV discovery redirects to `/remote.php/dav/`.
 
-Besides application routes, Caddy serves the TrueNAS and OpenWrt administration interfaces and a diagnostic text endpoint. Exact names, destinations, and published ports are in the Caddyfile and [Caddy stack](../caddy/compose.yaml).
+Besides application routes, Caddy serves the TrueNAS and OpenWrt administration interfaces and a diagnostic text endpoint. Exact names, destinations, and published ports are in the Caddyfile and [Caddy stack](../../caddy/compose.yaml).
 
 ### Published ports and authentication
 
@@ -87,4 +87,4 @@ Besides application routes, Caddy serves the TrueNAS and OpenWrt administration 
 
 Caddy adds no authentication of its own. Access controls depend on each application's settings.
 
-If a route is present in the editor but absent from the running proxy, use the [container-file diagnostic](operations.md#caddy-route-present-on-host-but-missing-in-container). The [roadmap](roadmap.md#network-follow-ups) tracks firewall documentation, throughput tests, and device-access questions.
+If a route is present in the editor but absent from the running proxy, use the [container-file diagnostic](../operations/troubleshooting.md#caddy-route-present-on-host-but-missing-in-container). The [roadmap](../roadmap.md#network-follow-ups) tracks firewall documentation, throughput tests, and device-access questions.

@@ -1,10 +1,10 @@
 # Infrastructure
 
-> [Overview](../README.md) · [Networking](networking.md) · [Services](services.md) · [Local AI](local-ai.md) · [Backups](backups.md)
+> [Homelab](../../README.md) · [Documentation](../README.md) · [Operations](../operations/README.md)
 
-The lab has a TrueNAS application/storage host, a separate Ubuntu AI host, and Hermes, a GL.iNet Flint 2 running OpenWrt as the main router.
+I use TrueNAS for applications and storage, a separate Ubuntu machine for local AI, and Hermes, a GL.iNet Flint 2 running OpenWrt, as the main router.
 
-This page covers the machines and storage. Use [networking and access](networking.md) for addresses and connection paths, or [operations](operations.md) for deployment and troubleshooting.
+This page covers the machines and storage. Use [networking and access](networking.md) for addresses and connection paths, or [operations](../operations/README.md) for deployment and troubleshooting.
 
 **On this page:** [TrueNAS](#truenas-application-and-storage-host) · [Storage layout](#storage-layout) · [Access and protection](#storage-access-and-protection) · [Prometheus](#prometheus-ai-host)
 
@@ -28,7 +28,7 @@ My former NZXT BLD gaming PC runs TrueNAS Community Edition. The last documented
 
 The conversion replaced the original Seagate Barracuda 2 TB HDD, expanded memory from 16 to 32 GB, added the network adapter, and removed the MSI GeForce RTX 2070 SUPER VENTUS OC. I also cleaned the system and repositioned the drive tray for the new disks.
 
-TrueNAS Apps manages the application lifecycle. On-disk Compose files are loaded through **Install via YAML**, keeping deployment definitions in Git. See [operations](operations.md#deployment-workflow) for the include pattern and execution contexts.
+TrueNAS Apps manages the application lifecycle. On-disk Compose files are loaded through **Install via YAML**, keeping deployment definitions in Git. See [operations](../operations/README.md#deployment-workflow) for the include pattern and execution contexts.
 
 ## Storage layout
 
@@ -75,7 +75,7 @@ Runtime state, databases, secrets, and user data stay outside Git. Compose refer
 
 ### Application-specific paths
 
-Crafty's server files live in `appdata/crafty-4/servers`; `data/games` is reserved. The former `tank/Apps` layout is retired; see [migration history](migrations.md) for the cutover and [media storage](services.md#media-storage) for Audiobookshelf's preserved container path.
+Crafty's server files live in `appdata/crafty-4/servers`; `data/games` is reserved. The former `tank/Apps` layout is retired; see [migration history](../history/migrations.md) for the cutover and [media storage](services.md#media-storage) for Audiobookshelf's preserved container path.
 
 Media directories share one ZFS filesystem to support the planned downloader/library hardlink workflow. Future movie, TV, and automation paths are plans until configured and checked; the existing qBittorrent source mounts only `media/torrents` at `/data/torrents`. See [services](services.md#media-storage) before designing additional mounts.
 
@@ -87,9 +87,9 @@ Each application has its own service identity and dataset access. Effective acce
 - Supplementary groups.
 - Dataset access control lists (ACLs).
 
-The [permissions procedure](operations.md#storage-permissions) explains how to inspect effective access without recursively changing the storage tree.
+The [permissions procedure](../operations/troubleshooting.md#storage-permissions) explains how to inspect effective access without recursively changing the storage tree.
 
-The mirror protects against a single data-drive failure. [Backups and snapshots](backups.md) covers local history, database exports, exclusions, and recovery limits.
+The mirror protects against a single data-drive failure. [Backups and snapshots](../operations/backups.md) covers local history, database exports, exclusions, and recovery limits.
 
 ## Prometheus AI host
 

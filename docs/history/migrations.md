@@ -1,12 +1,12 @@
 # Migration history
 
-> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Operations](operations.md) · [Backups and snapshots](backups.md)
+> [Homelab](../../README.md) · [Documentation](../README.md) · [Current setup](../setup/infrastructure.md)
 
 In late October and early November 2026, I moved the lab from application-specific storage under `tank/Apps` to Git-managed Compose definitions, separate application state, and shared user-data datasets. TrueNAS continued to manage the application lifecycle.
 
-This page records completed changes, including the later network and AI-host work. Use [infrastructure](infrastructure.md), [networking](networking.md), and [services](services.md) for today's setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
+This page records completed changes, including the later network and AI-host work. Use [infrastructure](../setup/infrastructure.md), [networking](../setup/networking.md), and [services](../setup/services.md) for today's setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
 
-**On this page:** [Milestones](#milestones) · [Application moves](#application-moves) · [Legacy storage](#retiring-legacy-storage) · [Network changes](#networking-and-service-changes) · [Prometheus](#prometheus-move-to-ubuntu)
+**On this page:** [Milestones](#milestones) · [Storage refactor](#deployment-and-storage-refactor) · [App moves](#application-moves) · [HTTPS](#private-https) · [Legacy storage](#retiring-legacy-storage) · [Network changes](#networking-and-service-changes) · [Prometheus](#prometheus-move-to-ubuntu) · [Recovery work](#recovery-work-after-migration)
 
 ## Milestones
 
@@ -20,7 +20,7 @@ This page records completed changes, including the later network and AI-host wor
 
 ## Deployment and storage refactor
 
-The refactor separated versioned definitions, application state, and user data. The resulting [storage layout](infrastructure.md#storage-layout) remains the current design.
+The refactor separated versioned definitions, application state, and user data. The resulting [storage layout](../setup/infrastructure.md#storage-layout) remains the current design.
 
 Apps were deployed through TrueNAS **Install via YAML**, loading the Compose file stored in the repository. This kept configuration editable and versioned while retaining the TrueNAS Apps interface for deployment and lifecycle management. I kept each app directory at the repository root; adding another `stacks/` directory inside the repo would have changed existing include paths.
 
@@ -51,7 +51,7 @@ Host source:           /mnt/tank/data/media/audiobooks
 Container destination: /mnt/tank/Apps/audiobookshelf/audiobooks
 ```
 
-The old-looking destination is intentional and remains in the [Compose source](../audiobookshelf/compose.yaml). It does not mount the retired host `tank/Apps` dataset. Changing that destination would require coordinating Audiobookshelf's stored library references.
+The old-looking destination is intentional and remains in the [Compose source](../../audiobookshelf/compose.yaml). It does not mount the retired host `tank/Apps` dataset. Changing that destination would require coordinating Audiobookshelf's stored library references.
 
 The initial media transfer stopped when the browser shell timed out. Inspection showed no remaining `rsync` process and an incomplete destination. An incremental copy resumed the transfer, followed by state comparisons and access checks. Its progress percentage described that incremental run, not the completeness of the entire migration.
 
@@ -77,7 +77,7 @@ DAVx5 setup was also resolved. It now works on my phone through the private HTTP
 
 Caddy's internal CA provided private HTTPS, with local DNS names standardized on application names such as `actual-budget.home.arpa` and `navidrome.home.arpa`. Purpose-based labels such as Budget and Music were used for bookmarks. Earlier aliases such as `code.home.arpa` and `search.home.arpa` were superseded.
 
-Jellyfin exposed a useful troubleshooting case: direct HTTP worked, but HTTPS failed during the TLS handshake. The host's Caddyfile contained the route while the container's file did not. A stale single-file bind mount after an editor save was suspected, but the mechanism was not proven. HTTPS was restored; the exact fix is not documented. See [operations](operations.md#caddy-route-present-on-host-but-missing-in-container) for the diagnostic sequence.
+Jellyfin exposed a useful troubleshooting case: direct HTTP worked, but HTTPS failed during the TLS handshake. The host's Caddyfile contained the route while the container's file did not. A stale single-file bind mount after an editor save was suspected, but the mechanism was not proven. HTTPS was restored; the exact fix is not documented. See [operations](../operations/troubleshooting.md#caddy-route-present-on-host-but-missing-in-container) for the diagnostic sequence.
 
 ## Retiring legacy storage
 
@@ -96,7 +96,7 @@ Some reclaimed space had been retained by legacy snapshots, explaining why ZFS `
 
 Hermes, the Flint 2 running OpenWrt, replaced the eero as the main router. Trusted, IoT, and guest networks were configured, and WireGuard became the remote-access path. Tailscale, AdGuard Home, File Browser, Jackett, and FlareSolverr are no longer used.
 
-Joplin moved from Nextcloud synchronization to Joplin Server. Immich, Bitwarden, and DAVx5 were verified through private HTTPS on the phone. Current connection details are in [networking and access](networking.md).
+Joplin moved from Nextcloud synchronization to Joplin Server. Immich, Bitwarden, and DAVx5 were verified through private HTTPS on the phone. Current connection details are in [networking and access](../setup/networking.md).
 
 ## Prometheus: move to Ubuntu
 
@@ -112,12 +112,12 @@ Ethernet initially had link without IPv4 DHCP configured in Netplan. Enabling DH
 
 ### Container startup
 
-Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](operations.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
+Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](../operations/troubleshooting.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
 
-The resulting Q2_0 setup completed the [standard benchmark](local-ai.md#q2_0-standard-benchmark), which is the single performance baseline.
+The resulting Q2_0 setup completed the [standard benchmark](../benchmarks/q2-0.md#q2_0-standard-benchmark), which is the single performance baseline.
 
 ## Recovery work after migration
 
 On November 4, ten periodic snapshot tasks were enabled and the first hourly snapshots were observed. PostgreSQL-native logical backups were then added for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. A manual run produced all five backup sets successfully; backup and retention cron jobs were configured afterward.
 
-These policies provide local protection on `tank`. Email alerts, an offsite copy, and a full restore test remain outstanding. See [backups](backups.md) for coverage, schedules, and verification steps.
+These policies provide local protection on `tank`. Email alerts, an offsite copy, and a full restore test remain outstanding. See [backups](../operations/backups.md) for coverage, schedules, and verification steps.

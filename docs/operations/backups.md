@@ -1,6 +1,6 @@
 # Backups and snapshots
 
-> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Database recovery](POSTGRES_RECOVERY.md) · [Roadmap](roadmap.md)
+> [Homelab](../../README.md) · [Documentation](../README.md) · [Roadmap](../roadmap.md)
 
 The lab has two forms of local recovery:
 
@@ -23,7 +23,7 @@ The policies were configured on November 4, 2026; some execution timestamps fall
 | PostgreSQL exports | Recover application databases | Manual run produced all five sets; unattended execution and expired-set pruning need checking |
 | Independent backup | Recover after loss of the pool or host | No offsite copy yet |
 
-A full restore test and email alerts are still outstanding. Use the [recovery runbook](POSTGRES_RECOVERY.md) to inspect or restore a database set, and the [roadmap](roadmap.md#recovery-verification-and-independent-backups) for remaining recovery work.
+A full restore test and email alerts are still outstanding. Use the [recovery runbook](postgres-recovery.md) to inspect or restore a database set, and the [roadmap](../roadmap.md#recovery-verification-and-independent-backups) for remaining recovery work.
 
 ## Snapshot policy
 
@@ -72,7 +72,7 @@ The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty 
 
 ## PostgreSQL logical backups
 
-The [backup script](../scripts/postgres-backup.sh) covers Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. The [recovery runbook](POSTGRES_RECOVERY.md) lists containers, version requirements, integrity checks, and the manual restore procedure.
+The [backup script](../../scripts/postgres-backup.sh) covers Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. The [recovery runbook](postgres-recovery.md) lists containers, version requirements, integrity checks, and the manual restore procedure.
 
 | Item | Configuration |
 | --- | --- |
@@ -115,7 +115,7 @@ A manual run successfully produced all five sets at `20261105T002105Z` (November
 
 ## Retention
 
-The [retention script](../scripts/postgres-retention.sh) follows these rules:
+The [retention script](../../scripts/postgres-retention.sh) follows these rules:
 
 | Rule | Behavior |
 | --- | --- |
@@ -152,6 +152,6 @@ sudo find /mnt/tank/backups/databases -mindepth 3 -maxdepth 3 \
   -type f -name SHA256SUMS -printf '%h\n' | sort
 ```
 
-Use the [runbook's checksum and archive checks](POSTGRES_RECOVERY.md#find-a-backup-read-only) on a selected set. A backup-directory listing alone does not prove integrity or execution by cron.
+Use the [runbook's checksum and archive checks](postgres-recovery.md#find-a-backup-read-only) on a selected set. A backup-directory listing alone does not prove integrity or execution by cron.
 
-Recovery also requires compatible database versions/extensions and the related application files and credentials. A database dump alone does not reconstruct the entire service. Record new verification results here and keep remaining work in the [roadmap](roadmap.md#recovery-verification-and-independent-backups).
+Recovery also requires compatible database versions/extensions and the related application files and credentials. A database dump alone does not reconstruct the entire service. Record new verification results here and keep remaining work in the [roadmap](../roadmap.md#recovery-verification-and-independent-backups).

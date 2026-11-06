@@ -1,8 +1,8 @@
 # Decisions and lessons
 
-> [Overview](../README.md) · [Infrastructure](infrastructure.md) · [Networking](networking.md) · [Migration history](migrations.md) · [Roadmap](roadmap.md)
+> [Homelab](../../README.md) · [Documentation](../README.md) · [Current setup](../setup/infrastructure.md)
 
-The lab is built around everyday use, reused hardware, and configuration I can understand and maintain. This page explains the choices and lessons behind it. [Migration history](migrations.md) records the actual cutovers; the other guides describe the current setup.
+I built the lab around everyday use, reused hardware, and configuration I can understand and maintain. This page explains the choices and lessons behind it. [Migration history](migrations.md) records the actual cutovers; the other guides describe the current setup.
 
 **On this page:** [Everyday use and cost](#everyday-use-and-cost) · [Architecture choices](#architecture-choices) · [Maintenance lessons](#maintenance-lessons)
 
@@ -39,7 +39,7 @@ The annual figures are 12 monthly payments. These are avoided subscription costs
 
 I converted the gaming PC I already owned into a TrueNAS host: more RAM, mirrored data drives, a 2.5 GbE NIC, and no discrete GPU. The original SSD became the boot drive. This made useful storage infrastructure without replacing the whole machine.
 
-Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. The completed [standard benchmark](local-ai.md#q2_0-standard-benchmark) of the working Q2_0 setup provides its performance baseline. Twelve sanity checks passed; the guide explains generation speed, the wait for an answer, and the request/output limits together.
+Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. The completed [standard benchmark](../benchmarks/q2-0.md#q2_0-standard-benchmark) of the working Q2_0 setup provides its performance baseline. Twelve sanity checks passed; the guide explains generation speed, the wait for an answer, and the request/output limits together.
 
 ### Keep configuration editable and deployment visible
 
@@ -84,7 +84,7 @@ Jellyfin's HTTPS failure happened before an HTTP request could reach Jellyfin. T
 
 Prometheus exposed another distinction: Docker's desired port-binding configuration could be present while active publication was absent. A healthy model process did not establish that the host API was reachable. Recreation restored publication, and a systemd startup unit was added. Startup after reboot now works.
 
-The [operations reference](operations.md) includes diagnostic commands for both incidents and distinguishes confirmed symptoms from suspected causes.
+The [troubleshooting guide](../operations/troubleshooting.md) includes diagnostic commands for both incidents and distinguishes confirmed symptoms from suspected causes.
 
 ### Prefer simple, persistent tooling
 
@@ -96,4 +96,4 @@ Private keys and credential values remain outside Git. Ignore rules help with ma
 
 Earlier household-wide AdGuard filtering interfered with family use, so filtering was narrowed to personal devices through Tailscale at that stage. Both services are now retired. The lesson is to account for other users and provide practical exceptions.
 
-The original eero-to-switch link illustrated that upgrading a server NIC and switch does not prove throughput across the whole path. The eero is now retired; current capacity should be measured rather than inferred from the old bottleneck or individual link speeds. See [networking](networking.md) for the current layout.
+The original eero-to-switch link illustrated that upgrading a server NIC and switch does not prove throughput across the whole path. The eero is now retired; current capacity should be measured rather than inferred from the old bottleneck or individual link speeds. See [networking](../setup/networking.md) for the current layout.

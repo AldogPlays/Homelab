@@ -1,6 +1,6 @@
 # Homelab
 
-**On this page:** [Architecture](#architecture) · [Services](#what-i-run) · [Photos](#hardware-gallery) · [Documentation](#documentation) · [Status](#current-status)
+**On this page:** [Architecture](#architecture) · [Services](#what-i-run) · [Documentation](#documentation) · [Status](#current-status) · [Photos](#hardware-gallery)
 
 I run my personal cloud on a repurposed gaming PC with [TrueNAS](https://www.truenas.com/truenas-community-edition/). It holds my photos, files, notes, passwords, and media. A second machine, Prometheus, runs local AI models on an AMD GPU.
 
@@ -20,7 +20,7 @@ flowchart LR
     class Router router
 ```
 
-Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. The [networking guide](docs/networking.md) explains network separation and local/remote access.
+Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. The [networking guide](docs/setup/networking.md) explains network separation and local/remote access.
 
 ## What I run
 
@@ -33,7 +33,31 @@ Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus run
 | Local AI | Open WebUI on TrueNAS, connected to Strata on Prometheus |
 | Supporting services | Caddy, code-server, SearXNG, and qBittorrent with Gluetun/PIA |
 
-The [service guide](docs/services.md) covers dependencies, clients, and links to all 15 Compose stacks. The [decisions and lessons](docs/decisions-and-lessons.md) explain the hardware reuse, storage design, and subscriptions this setup replaces.
+The [service guide](docs/setup/services.md) covers dependencies, clients, and links to all 15 Compose stacks. The [decisions and lessons](docs/history/decisions-and-lessons.md) explain the hardware reuse, storage design, and subscriptions this setup replaces.
+
+## Documentation
+
+The [documentation index](docs/README.md) brings together the setup guides, maintenance procedures, recovery instructions, and history.
+
+| I need to… | Start here |
+| --- | --- |
+| Understand the lab | [Infrastructure](docs/setup/infrastructure.md) → [Networking](docs/setup/networking.md) → [Services](docs/setup/services.md) |
+| Use or maintain local AI | [Local AI](docs/setup/local-ai.md) and the [Q2_0 benchmark](docs/benchmarks/q2-0.md), with timing definitions before the results |
+| Maintain or troubleshoot a service | [Operations](docs/operations/README.md) and [Troubleshooting](docs/operations/troubleshooting.md) |
+| Recover application data | [Backups](docs/operations/backups.md) → [PostgreSQL recovery](docs/operations/postgres-recovery.md) |
+| Understand past choices or remaining work | [Decisions and lessons](docs/history/decisions-and-lessons.md), [Migration history](docs/history/migrations.md), and [Roadmap](docs/roadmap.md) |
+
+## Current status
+
+This status reflects the work recorded through November 4, 2026 Pacific time (November 5 UTC).
+
+| Status | Work |
+| --- | --- |
+| **Working** | Storage migration, three-network setup, phone HTTPS access, and Prometheus startup after reboot |
+| **Measured** | Standard Q2_0 benchmark complete |
+| **Configured; partly verified** | Local snapshots and daily PostgreSQL jobs, configured November 4, 2026; initial snapshots and a manual backup succeeded |
+| **Follow-ups** | Unattended execution, a full restore test, email alerts, and an offsite copy |
+| **Planned** | Media automation with an *Arr stack |
 
 ## Hardware gallery
 
@@ -64,43 +88,3 @@ Click a photo to view it larger.
     </td>
   </tr>
 </table>
-
-## Documentation
-
-| Start with… | Reading path |
-| --- | --- |
-| How the lab fits together | [Infrastructure](docs/infrastructure.md) → [Networking](docs/networking.md) → [Services](docs/services.md) |
-| Local AI and its performance | [Local AI](docs/local-ai.md), with terminology explained before the benchmark tables |
-| Maintenance or troubleshooting | [Operations](docs/operations.md) |
-| Recovering application data | [Backups](docs/backups.md) → [PostgreSQL recovery](docs/POSTGRES_RECOVERY.md) |
-
-### Explore the setup
-
-- [Infrastructure](docs/infrastructure.md): hardware, storage roles, and dataset layout.
-- [Networking and access](docs/networking.md): network segments, DNS, private HTTPS, and WireGuard.
-- [Services and clients](docs/services.md): applications, dependencies, media storage, and everyday use.
-- [Local AI](docs/local-ai.md): how Open WebUI and Strata fit together, what the Q2_0 benchmark measures, and runtime details.
-- [Backups and snapshots](docs/backups.md): protection coverage, schedules, and verification status.
-
-### Maintain the lab
-
-- [Operations and troubleshooting](docs/operations.md): deployment workflow, shell contexts, and diagnostic procedures.
-- [PostgreSQL recovery](docs/POSTGRES_RECOVERY.md): select, validate, and restore a database backup.
-- [Roadmap](docs/roadmap.md): outstanding checks and planned improvements.
-
-### Background
-
-- [Decisions and lessons](docs/decisions-and-lessons.md): why the lab is designed this way.
-- [Migration history](docs/migrations.md): completed changes and the problems encountered along the way.
-
-## Current status
-
-This status reflects the work recorded through November 4, 2026 Pacific time (November 5 UTC).
-
-| Status | Work |
-| --- | --- |
-| **Working** | Storage migration, three-network setup, phone HTTPS access, and Prometheus startup after reboot |
-| **Measured** | Standard Q2_0 benchmark complete |
-| **Configured; partly verified** | Local snapshots and daily PostgreSQL jobs, configured November 4, 2026; initial snapshots and a manual backup succeeded |
-| **Follow-ups** | Unattended execution, a full restore test, email alerts, and an offsite copy |
-| **Planned** | Media automation with an *Arr stack |
