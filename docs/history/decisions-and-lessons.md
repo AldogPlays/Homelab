@@ -37,7 +37,7 @@ I keep apps and storage on TrueNAS and model inference on Prometheus.
 
 I converted the gaming PC I already owned into a TrueNAS host: more RAM, mirrored data drives, a 2.5 GbE NIC, and no discrete GPU. The original SSD became the boot drive. This made useful storage infrastructure without replacing the whole machine.
 
-Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. The completed [standard benchmark](../benchmarks/q2-0.md#q2_0-standard-benchmark) of the working Q2_0 setup provides its performance baseline. Twelve sanity checks passed; the guide explains generation speed, the wait for an answer, and the request/output limits together.
+Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. [Benchmark comparisons](../setup/local-ai.md#performance-reference) led to a Coder IQ1_M baseline with RAM-resident experts and substantially lower long-prompt latency than Q2_0. All six recorded runs passed twelve sanity checks; model and residency changed together, so the measurements do not isolate one cause or establish broad answer quality.
 
 ### Keep configuration editable and deployment visible
 

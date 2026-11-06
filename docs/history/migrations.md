@@ -13,8 +13,9 @@ These are the moves I've completed, including the network and AI-host changes. T
 | Late October–early November 2026 | Moved apps to Git-managed definitions and separated state from user data |
 | November 3 | Deleted the legacy `tank/Apps` dataset after dependency checks |
 | Early November | Replaced the eero with Hermes and moved Prometheus from Windows to Ubuntu |
-| November 4 | Added snapshot policies and daily PostgreSQL backup/retention jobs |
+| November 4–5 | Added snapshot policies and daily PostgreSQL backup/retention jobs |
 | November 4 Pacific / November 5 UTC | Completed the standard Q2_0 benchmark |
+| By November 6 | Compared six standard AI runs and retained Coder IQ1_M with RAM-resident experts as the baseline |
 
 ## Deployment and storage refactor
 
@@ -74,6 +75,8 @@ Those checks covered routing, forwarding, and storage access. They did not estab
 
 Direct access on the new LAN initially produced an untrusted-domain error. Updating allowed hosts and the CLI URL for the new address and private HTTPS name restored access to the authenticated dashboard.
 
+The verified allowed hosts were `nextcloud.home.arpa` and `10.10.10.10:30027`, with `overwrite.cli.url` set to `https://nextcloud.home.arpa`. The former LAN and Tailscale entries were removed. [Troubleshooting](../operations/troubleshooting.md#nextcloud-untrusted-domain) records the checks and the distinction between direct-HTTP and later HTTPS evidence.
+
 DAVx5 setup was also resolved. It now works on my phone through the private HTTPS URL; the precise authorization fix and contact-group setting are not documented.
 
 </details>
@@ -96,6 +99,8 @@ On November 3, I retired the legacy `tank/Apps` dataset after the app moves. Bef
 The remaining Compose reference was Audiobookshelf's container destination, not a host dependency. Subsequent `zfs list tank/Apps` reported that the dataset did not exist, and all 14 installed apps in the accompanying middleware query remained `RUNNING`.
 
 Some reclaimed space had been retained by legacy snapshots, explaining why ZFS `USED` figures had exceeded file-level `du` totals. File-level deletion and pool-level space reclamation were separate checks.
+
+Immediately afterward, `zpool list tank` reported `ONLINE`, with `978G` allocated and `4.50T` free on the `5.45T` pool. These are historical post-retirement figures. The final deletion command was not preserved in the handoff; completion is established by the dataset-absence check and accompanying app-state query.
 
 ## Networking and service changes
 
@@ -122,7 +127,7 @@ Ethernet initially had link without IPv4 DHCP configured in Netplan. Enabling DH
 
 Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](../operations/troubleshooting.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
 
-The resulting Q2_0 setup completed the [standard benchmark](../benchmarks/q2-0.md#q2_0-standard-benchmark), which is the single performance baseline.
+The resulting Q2_0 setup completed the [original standard benchmark](../benchmarks/q2-0.md). Later comparisons covered another Q2_0 run, a fresh restart, and three Coder IQ1_M configurations. Coder with `KV=int8`, `spec=4`, and RAM-resident experts became the latest recorded baseline. Quick and thorough tuning retained those settings; no full standard run after thorough tuning was shown. The [benchmark history](../benchmarks/README.md) preserves the results and limits.
 
 </details>
 
@@ -130,4 +135,6 @@ The resulting Q2_0 setup completed the [standard benchmark](../benchmarks/q2-0.m
 
 On November 4, I enabled ten periodic snapshot tasks and saw the first hourly snapshots. I then added PostgreSQL-native logical backups for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. A manual run produced all five sets successfully, and I configured the backup and retention cron jobs afterward.
 
-These protect data locally on `tank`. I haven't configured email alerts, made an offsite copy, or completed a full restore test. My [backup notes](../operations/backups.md) have the coverage, schedules, and verification steps.
+The proposed temporary restore-test app and offsite work were deferred. These protect data locally on `tank`. I haven't configured email alerts, made an offsite copy, or completed a full restore test. My [backup notes](../operations/backups.md) have the coverage, schedules, and verification steps.
+
+Migration and backup details were reconciled with `HOMELAB_CONVERSATION_TECHNICAL_EXPORT.md`, covering conversation evidence through November 5, 2026. That export records observations and proposals at the time; it does not supersede later networking/AI evidence or establish current live state.

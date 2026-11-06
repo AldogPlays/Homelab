@@ -12,6 +12,8 @@ These are my notes for checking apps, working in the right shell, and deploying 
 | Check an app's status, mounts, or configuration | [Inspect a TrueNAS app](#inspect-a-truenas-app) |
 | Prepare and deploy a change | [Deployment workflow](#deployment-workflow) |
 | Caddy cannot see an edited route | [Compare host and container files](troubleshooting.md#caddy-route-present-on-host-but-missing-in-container) |
+| Nextcloud rejects a hostname or IP | [Check allowed hosts](troubleshooting.md#nextcloud-untrusted-domain) |
+| Open WebUI refuses connections after deployment | [Check startup](troubleshooting.md#open-webui-startup-connection-refused) |
 | A long media transfer stopped | [Interrupted media copy](troubleshooting.md#interrupted-media-copy) |
 | An application cannot access its files | [Storage permissions](troubleshooting.md#storage-permissions) |
 | Git authentication fails | [Git authentication](#git-authentication) |
@@ -33,6 +35,19 @@ Use [backups](backups.md#check-the-setup) to check protection jobs and [networki
 A host path and a container path can name the same underlying files differently. For example, `/mnt/tank/stacks/caddy/Caddyfile` on TrueNAS appears as `/workspace/caddy/Caddyfile` in code-server and `/etc/caddy/Caddyfile` in Caddy.
 
 `/workspace` is a code-server mount, not a TrueNAS host path. A missing path in the wrong shell does not establish that the host file is missing.
+
+<details>
+<summary>Listing root-protected backup directories</summary>
+
+Root-protected backup paths also need care: the shell expands wildcards before `sudo` runs. During backup setup, `sudo ls /mnt/tank/backups/databases/*` failed with zsh's `no matches found` even though the directories existed. Inspect them without a shell wildcard:
+
+```bash
+# TrueNAS host
+sudo find /mnt/tank/backups/databases \
+  -mindepth 1 -maxdepth 1 -type d -printf '%f  %m  %u:%g\n'
+```
+
+</details>
 
 ## Inspect a TrueNAS app
 
@@ -70,6 +85,8 @@ include:
 ```
 
 The placeholder must be replaced with the app directory. Keep app directories at their established repository paths so includes continue to resolve.
+
+Use the TrueNAS WebUI, CLI, or API for system configuration; avoid editing appliance-managed system files directly.
 
 I keep documentation edits separate from deployment work. Changing Compose, Dockerfiles, Caddy configuration, maintenance scripts, or live infrastructure requires explicit approval.
 

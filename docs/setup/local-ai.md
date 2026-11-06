@@ -2,7 +2,7 @@
 
 > [Homelab](../../README.md) · [Documentation](../README.md)
 
-I use Open WebUI on TrueNAS to chat with a model running on Prometheus. Strata does the model work on Prometheus's AMD GPU. I'm running `qwen3.8-flash-next-q2_0` with a 65,536-token (64K) context window, and I've checked that it starts after a reboot.
+I use Open WebUI on TrueNAS to chat with a model running on Prometheus. Strata does the model work on Prometheus's AMD GPU. The last recorded launch, in the November 6, 2026 handoff, uses Coder IQ1_M with a 65,536-token (64K) context window.
 
 ## Serving layout
 
@@ -26,7 +26,7 @@ Three settings describe different parts of this setup:
 
 | Term | Meaning here |
 | --- | --- |
-| Q2_0 | The quantization label for the model being served. Quantization stores model weights at reduced precision; the recorded benchmark does not compare its quality with other quantizations. |
+| Coder IQ1_M | The latest recorded model and quantization label; the earlier setup used Q2_0. Quantization stores model weights at reduced precision. The timings and sanity fixtures do not establish broad quality differences between them. |
 | 64K context | The configured token window for a request. Tokens are chunks of text, so 65,536 tokens is not a word count. A configured window does not establish how well the model uses all of it. |
 | Thinking enabled | The model generates reasoning as well as visible answer text. That reasoning consumes generated tokens and time before or alongside the answer. |
 
@@ -34,7 +34,19 @@ Three settings describe different parts of this setup:
 
 ## Performance reference
 
-I have one recorded performance baseline: the [standard Q2_0 benchmark](../benchmarks/q2-0.md). That page has the timings, output limits, sanity checks, exact run settings, and command. It measures Strata directly, not the browser experience.
+The November 5–6 benchmark record contains six standard runs. Every run passed **12/12 sanity checks**, with zero failed or skipped required requests. **Coder IQ1_M with `KV=int8`, `spec=4`, and RAM-resident experts is the latest recorded baseline.**
+
+| Workload | Fresh Q2_0: first token, s | Coder IQ1_M: first token, s | Coder decode, tokens/s |
+| --- | ---: | ---: | ---: |
+| Short | 1.33 | 1.06 | 50.3 |
+| 4K prompt | 22.74 | 8.92 | 48.2 |
+| 16K prompt | 83.70 | 33.71 | 45.6 |
+
+Values are medians from three repetitions through the container-loopback API, excluding Open WebUI overhead. Coder's long-prompt first-token latency was about 2.5× faster than fresh Q2_0. Both the model and expert-residency mode changed, so this comparison does not isolate one cause.
+
+The `k8v4` and `spec=2` trials offered no clear improvement; quick and thorough tuning also retained the baseline. Performance requests had a **512-token reasoning-plus-answer cap**, often reached on long prompts. The sanity checks and timings do not establish broad answer quality or full-window 64K performance.
+
+See [benchmark history](../benchmarks/README.md) for all six runs, tuning outcomes, artifact locations, and the original Q2_0 timings and provenance.
 
 ## Runtime and maintenance
 
@@ -48,7 +60,8 @@ These are the versions and settings I recorded during setup. Strata uses a movin
 | Host OS / kernel | Ubuntu Server 26.04.1 LTS / `7.0.0-42-generic` |
 | Docker / Compose | Docker CE 29.9.2 / Compose 5.7.0 at installation |
 | Strata image / engine | `ghcr.io/niko1221/strata:latest-rocm-gfx110x` / engine 0.1.55 HIP in logs |
-| Model / context | `qwen3.8-flash-next-q2_0` / 65,536 tokens |
+| Latest recorded model / context | Qwen3.8-Flash-Next Coder IQ1_M / 65,536 tokens |
+| Latest recorded inference settings | `KV=int8`, `spec=4`, `--resident-experts` |
 | Capabilities | Text-only; vision disabled; Bearer API authentication |
 | OpenAI-compatible base URL | `http://10.10.10.20:8080/v1` |
 
@@ -64,7 +77,7 @@ The dedicated logical volume (LV), formatted with ext4, is mounted persistently 
 
 Engine logs are at `/data/state/strata/launch/docker.engine.log` inside the container. Authentication is supplied through an existing protected mount referenced by the host-side configuration; keep its contents out of logs and documentation.
 
-The recorded container settings are:
+The earlier Q2_0 container settings are recorded below. The newer handoff records the Coder launch settings above, but does not supply a replacement Compose file:
 
 | Area | Settings |
 | --- | --- |
@@ -82,7 +95,7 @@ The 64K setting allocates context space. The standard suite's longest performanc
 
 ### Startup and diagnostics
 
-The systemd unit waits for the reserved Ethernet address on `enp13s0`, then invokes Compose with `up -d --force-recreate`. Both manual startup and startup after reboot have succeeded.
+The systemd unit waits for the reserved Ethernet address on `enp13s0`, then invokes Compose with `up -d --force-recreate`. Manual startup and startup after reboot succeeded during the earlier Q2_0 setup. The Coder benchmark handoff does not include another reboot test.
 
 I haven't verified recovery after a hardware power outage or from a process that stays running but becomes unhealthy. Those are separate from the successful reboot test.
 

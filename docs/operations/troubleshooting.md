@@ -53,6 +53,58 @@ A successful syntax check does not prove the file contains the intended route. P
 
 </details>
 
+## Nextcloud untrusted domain
+
+After the LAN address changed, direct access at `http://10.10.10.10:30027` showed **Access through untrusted domain**. The November 3 repair updated the allowed hosts and CLI URL; the recorded settings and checks are below.
+
+<details>
+<summary>Recorded settings and read-only checks</summary>
+
+| Runtime setting | Confirmed value after repair |
+| --- | --- |
+| `trusted_domains` | `nextcloud.home.arpa`, `10.10.10.10:30027` |
+| `overwrite.cli.url` | `https://nextcloud.home.arpa` |
+
+These settings live in Nextcloud's persistent configuration. Inspect them on the **TrueNAS host**:
+
+```bash
+sudo docker exec -u www-data ix-nextcloud-nextcloud-1 \
+  php /var/www/html/occ status
+
+sudo docker exec -u www-data ix-nextcloud-nextcloud-1 \
+  php /var/www/html/occ config:system:get trusted_domains
+
+sudo docker exec -u www-data ix-nextcloud-nextcloud-1 \
+  php /var/www/html/occ config:system:get overwrite.cli.url
+```
+
+The recorded status was Nextcloud `35.0.2`, installed, with maintenance mode off and no database upgrade needed. An authenticated dashboard at the direct IP confirmed the allowed-host repair. That HTTP check did not verify DNS, TLS, or the proxy; private HTTPS phone access was verified separately, as recorded in [networking](../setup/networking.md#local-and-remote-service-access).
+
+</details>
+
+## Open WebUI startup: connection refused
+
+During the initial deployment, Compose validation passed while `http://10.10.10.10:30070/health` still refused connections. Later, two requests returned `{"status":true}` and the application was confirmed working. The initial refusal alone did not establish a bad Compose definition or a backend-model failure.
+
+<details>
+<summary>Startup checks and persistent state</summary>
+
+Read-only checks on the **TrueNAS host**:
+
+```bash
+sudo docker compose -f /mnt/tank/stacks/open-webui/compose.yaml config --quiet
+sudo docker ps -a --filter name=ix-open-webui \
+  --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+sudo ss -ltn | grep ':30070 '
+curl -fsS --max-time 10 http://10.10.10.10:30070/health
+```
+
+Check deployment state and allow initialization to complete before repeating the health request. Compose validation establishes configuration validity; a successful health response establishes WebUI availability. Test its connection to Strata separately using the [local AI guide](../setup/local-ai.md#serving-layout).
+
+Persistent backend data is under `/mnt/tank/appdata/open-webui/data`. Preserve the existing `WEBUI_SECRET_KEY` in `/mnt/tank/appdata/open-webui/secrets/open-webui.env`; setup verified a root-owned mode `600` file in a mode `700` secrets directory.
+
+</details>
+
 ## Interrupted media copy
 
 My browser shell timed out during the Audiobookshelf move, leaving an incomplete destination and no `rsync` process running. I resumed it with an incremental `rsync` and compared the copied app state afterward.

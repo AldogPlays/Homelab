@@ -2,7 +2,7 @@
 
 > [Homelab](../README.md)
 
-These are my notes on the hardware, apps, and maintenance behind the lab. They cover what I've recorded through November 4, 2026 Pacific time (November 5 UTC), rather than a fresh check of every running service.
+These are my notes on the hardware, apps, and maintenance behind the lab. They include setup and conversation evidence through November 6, 2026, rather than a fresh check of every running service.
 
 | What I'm looking for | Notes |
 | --- | --- |
@@ -10,7 +10,7 @@ These are my notes on the hardware, apps, and maintenance behind the lab. They c
 | Networks, DNS, HTTPS, and remote access | [Networking](setup/networking.md) |
 | Apps, dependencies, clients, and media storage | [Services](setup/services.md) |
 | Open WebUI, Strata, and the AI host | [Local AI](setup/local-ai.md) |
-| AI timings, test limits, and the benchmark command | [Q2_0 benchmark](benchmarks/q2-0.md) |
+| AI comparisons, tuning, and test limits | [Benchmark history](benchmarks/README.md), with the [original Q2_0 report](benchmarks/q2-0.md) |
 | Shell contexts, app inspection, deployment, and Git | [Operations](operations/README.md) |
 | Problems I've run into and how I checked them | [Troubleshooting](operations/troubleshooting.md) |
 | Snapshot schedules, database backups, and retention | [Backups](operations/backups.md) |
@@ -23,7 +23,7 @@ For a first look, I'd start with infrastructure, networking, and services. For r
 <details>
 <summary>About these notes</summary>
 
-I keep the current setup in the setup guides, procedures in operations, and completed changes in history. The benchmark page holds the single recorded performance baseline. I link to those pages instead of maintaining separate copies of the same details.
+I keep the current setup in the setup guides, procedures in operations, and completed changes in history. The benchmark pages hold the six-run comparison and the original Q2_0 report. I link to those pages instead of maintaining separate copies of the same details.
 
 The Compose files are the reference for image versions, ports, mounts, and service identities. The [Caddyfile](../caddy/Caddyfile) defines web names and proxy destinations. Runtime settings also affect application behavior. Prometheus's full Strata definition lives on that host, outside this repository.
 

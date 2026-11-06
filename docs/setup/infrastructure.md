@@ -116,11 +116,11 @@ Prometheus is my separate Ubuntu AI machine, with a Ryzen 7 7800X3D, an RX 7800 
 | Motherboard | Gigabyte B650I AORUS ULTRA |
 | GPU | PowerColor Radeon RX 7800 XT, 16 GiB VRAM; AMD integrated graphics also present |
 | RAM / swap | 32 GB DDR5, about 29 GiB reported usable; 8 GiB swap |
-| Storage | Approximately 2 TB NVMe; 100 GB root logical volume (LV) and 1 TB ext4 AI-data LV |
+| Storage | Approximately 2 TB NVMe (`SHPP41-2000GM`); 100 GB root logical volume (LV) and 1 TB ext4 AI-data LV |
 | AI storage mount | `/srv/ai`, on `/dev/ubuntu-vg/ai-data`; mount persistence observed after reboots |
 | Ethernet | Intel I225-V, `igc`, `enp13s0`, negotiated 2.5 Gb/s full duplex |
 
 </details>
 
 
-Strata runs in Docker with AMD device access; Open WebUI on TrueNAS connects to it across the LAN. The [local AI guide](local-ai.md) covers model settings, startup, and the benchmark. Ethernet preference and Wi-Fi fallback are documented in [networking](networking.md#network-layout).
+Strata runs in Docker with AMD device access; Open WebUI on TrueNAS connects to it across the LAN. The [local AI guide](local-ai.md) covers model settings, startup, and a benchmark summary, with [full results](../benchmarks/README.md) on a separate page. Ethernet preference and Wi-Fi fallback are documented in [networking](networking.md#network-layout).

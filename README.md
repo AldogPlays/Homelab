@@ -39,9 +39,9 @@ The [service guide](docs/setup/services.md) covers dependencies, clients, and li
 
 ## Current status
 
-As of November 4, 2026 Pacific time (November 5 UTC), the storage migration, three-network setup, phone HTTPS access, and Prometheus startup after reboot are working. I also finished the standard Q2_0 benchmark.
+The storage migration, three-network setup, and phone HTTPS access are working. Prometheus startup after reboot was checked during the earlier Q2_0 setup. Six recorded AI benchmark runs passed their sanity checks; [Coder IQ1_M is the latest baseline](docs/setup/local-ai.md#performance-reference).
 
-I set up local snapshots and daily PostgreSQL backup jobs on November 4. The first snapshots and a manual backup worked, but I haven't verified unattended runs or completed a full restore test. Email alerts and an offsite copy aren't set up. The [backup notes](docs/operations/backups.md) explain what is covered.
+The November 4–5 handoff confirmed local snapshots and daily PostgreSQL backup/retention jobs. Initial snapshots and manual backups for all five databases worked, but unattended execution, expired-set pruning, and a full restore test remain unverified. Email alerts and an offsite copy aren't set up. The [backup notes](docs/operations/backups.md) explain what is covered.
 
 ## Hardware gallery
 

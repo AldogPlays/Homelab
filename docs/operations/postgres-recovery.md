@@ -26,15 +26,15 @@ Each app needs a compatible PostgreSQL version and its related application files
 <details>
 <summary>Database versions, containers, and related files</summary>
 
-| App | Database container | PostgreSQL version at backup setup | Related application data |
+| App | Database container | `pg_dump` version observed at setup | Related application data |
 | --- | --- | --- | --- |
 | Nextcloud | `ix-nextcloud-postgres-1` | 17.11 | `tank/appdata/nextcloud`, `tank/data/files` |
-| Immich | `ix-immich-pgvecto-1` | 18.4 with VectorChord 1.1.1 | `tank/appdata/immich`, `tank/data/photos` |
+| Immich | `ix-immich-pgvecto-1` | 18.4; image tagged VectorChord 1.1.1 | `tank/appdata/immich`, `tank/data/photos` |
 | Vaultwarden | `ix-vaultwarden-postgres-1` | 18.6 | `tank/appdata/vaultwarden` |
 | Joplin | `ix-joplin-postgres-1` | 18.6 | `tank/appdata/joplin` |
 | LubeLogger | `ix-lubelogger-postgres-1` | 18.6 | `tank/appdata/lubelogger` |
 
-Confirm container image versions before restoring. Immich requires an appropriate PostgreSQL image with its extension support; a plain PostgreSQL image may not be sufficient.
+The export recorded backup-client versions, not a separate server-version query. Confirm the source server version, container image, and required extensions before restoring. Immich requires an appropriate PostgreSQL image with its extension support; a plain PostgreSQL image may not be sufficient.
 
 Each completed timestamped directory contains:
 
