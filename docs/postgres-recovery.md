@@ -1,6 +1,6 @@
 # PostgreSQL recovery
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
 These are my notes for selecting a PostgreSQL backup, checking it, and restoring it into a separate test instance. I configured the backup jobs on November 4, 2026, but I haven't completed a full restore test. Container versions and backup availability need checking before using the commands.
 
@@ -26,7 +26,7 @@ Each app needs a compatible PostgreSQL version and its related application files
 <details>
 <summary>Database versions, containers, and related files</summary>
 
-| App | Database container | `pg_dump` version observed at setup | Related application data |
+| App | Database container | `pg_dump` version I checked | Related application data |
 | --- | --- | --- | --- |
 | Nextcloud | `ix-nextcloud-postgres-1` | 17.11 | `tank/appdata/nextcloud`, `tank/data/files` |
 | Immich | `ix-immich-pgvecto-1` | 18.4; image tagged VectorChord 1.1.1 | `tank/appdata/immich`, `tank/data/photos` |
@@ -34,7 +34,7 @@ Each app needs a compatible PostgreSQL version and its related application files
 | Joplin | `ix-joplin-postgres-1` | 18.6 | `tank/appdata/joplin` |
 | LubeLogger | `ix-lubelogger-postgres-1` | 18.6 | `tank/appdata/lubelogger` |
 
-The export recorded backup-client versions, not a separate server-version query. Confirm the source server version, container image, and required extensions before restoring. Immich requires an appropriate PostgreSQL image with its extension support; a plain PostgreSQL image may not be sufficient.
+I checked the backup-client versions below, but didn’t run a separate server-version query. Before restoring, I need to confirm the source server version, container image, and required extensions. Immich requires an appropriate PostgreSQL image with its extension support; a plain PostgreSQL image may not be sufficient.
 
 Each completed timestamped directory contains:
 

@@ -1,10 +1,10 @@
 # Q2_0 standard benchmark
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
-I ran this on November 4, 2026 Pacific time (November 5 UTC), directly against Strata's API inside the container. This is my original performance baseline; the [benchmark history](README.md) compares it with later Q2_0 and Coder IQ1_M runs. It measures the backend, without Open WebUI or the browser connection.
+I ran this on November 4, 2026 Pacific time (November 5 UTC), directly against Strata's API inside the container. This is my original performance baseline; the [benchmark history](benchmarks.md) compares it with later Q2_0 and Coder IQ1_M runs. It measures the backend, without Open WebUI or the browser connection.
 
-The [local AI guide](../setup/local-ai.md#serving-layout) explains the serving layout, Q2_0 quantization, the configured 64K context window, and thinking mode.
+My [local AI notes](local-ai.md#serving-layout) explain how I connect the services, configure the context window, and use thinking mode. I used Q2_0 for this original run.
 
 What I got from this run:
 
@@ -42,7 +42,7 @@ These small sample counts describe this run, not a guaranteed response time.
 
 | Case | Prompt tokens/s | Decode tokens/s | First token, s |
 | --- | ---: | ---: | ---: |
-| Short | Not reported | 49.7 | 1.41 |
+| Short | — | 49.7 | 1.41 |
 | 4K prompt | 167.3 | 36.5 | 24.50 |
 | 16K prompt | 208.5 | 44.5 | 78.66 |
 
@@ -61,7 +61,7 @@ That missing sample explains why the 16K first-answer median below is smaller th
 
 | Metric | Short | 4K prompt | 16K prompt |
 | --- | ---: | ---: | ---: |
-| Prompt tokens/s | Not reported | 167.3 (121.4–215.6) | 208.5 (158.9–322.2) |
+| Prompt tokens/s | — | 167.3 (121.4–215.6) | 208.5 (158.9–322.2) |
 | Decode tokens/s | 49.7 (39.4–64.0) | 36.5 (30.9–53.2) | 44.5 (29.3–49.6) |
 | First token, s | 1.41 (0.85–1.52) | 24.50 (19.01–33.77) | 78.66 (50.92–103.23) |
 | First answer, s | 2.89 (2.81–9.33) | 29.09 (25.43–46.69) | 70.16 (58.38–81.94) |
@@ -88,8 +88,8 @@ The report omits the short case's prompt-processing rate because fixed request o
 | Track | `custom`; no additional track notes |
 | Sampling | Temperature 1.0; top_p 0.95; top_k 20; min_p 0; presence penalty 0; repetition penalty 1.0 |
 | Reasoning | `xhigh`, thinking enabled and preserved |
-| Duration after model loading | 20 minutes 42 seconds, as reported by the runner |
-| Host | Ryzen 7 7800X3D, RX 7800 XT 16 GiB from the host inventory; runner reported generic `AMD Radeon` and 30.0 GiB RAM |
+| Duration after model loading | 20 minutes 42 seconds |
+| Host | My Ryzen 7 7800X3D and RX 7800 XT 16 GiB; the runner identified the GPU as `AMD Radeon` and memory as 30.0 GiB |
 | Host OS | Ubuntu 26.04.1 LTS, from host `/etc/os-release` |
 | Runner environment | Inside Docker: Ubuntu 24.04.5 LTS; kernel `7.0.0-42-generic` |
 
@@ -141,7 +141,7 @@ The original files remain on Prometheus, outside this repository:
 └── results.json
 ```
 
-The tables above summarize the generated benchmark README. Full request traces, configuration, and provenance remain in the artifact directory. The report files are root-owned, mode `600`; read them with `sudo` rather than changing their permissions.
+I keep the full request traces, configuration, and provenance in that directory. The files are root-owned, mode `600`, so I read them with `sudo` rather than changing their permissions.
 
 **Model identification.** The model was stored across two GGUF files, a format used for model weights. The report records abbreviated hash prefixes `69820c02ec7d0b45…` and `316b46f3a2dbd68c…`; complete hashes belong to the original artifacts. Model/source revisions, driver/runtime versions, storage characteristics, and background work were not measured.
 
@@ -173,6 +173,6 @@ sudo docker exec -it strata sh -ec '
 
 This uses the running model through container loopback, reads authentication from its existing mounted file, and saves reports in persistent storage. `--no-start` prevents the runner from launching another engine. The help check stops the block if the installed CLI lacks the benchmark command. Command behavior and authentication are documented in [terminal commands](https://github.com/Niko1221/Strata/blob/main/docs/TERMINAL.md).
 
-The output directory inside the container maps to `/srv/ai/strata/data/benchmarks/` on Prometheus. Retain the generated README, JSON, and supporting files together. Review the report before publishing. Use a descriptive, unique folder and record the active model and settings for each new run. The reported 20 minutes 42 seconds applies to this original run after model loading; it is not a universal duration estimate.
+The output directory inside the container maps to `/srv/ai/strata/data/benchmarks/` on Prometheus. Retain the generated README, JSON, and supporting files together. Review the report before publishing. Use a descriptive, unique folder and record the active model and settings for each new run. My original run took 20 minutes 42 seconds after model loading; other runs can take a different amount of time.
 
 </details>

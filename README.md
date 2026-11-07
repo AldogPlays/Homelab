@@ -18,7 +18,7 @@ flowchart LR
     class Router router
 ```
 
-Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. The [networking guide](docs/setup/networking.md) explains network separation and local/remote access.
+Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus runs local AI. The [networking guide](docs/networking.md) explains network separation and local/remote access.
 
 ## What I run
 
@@ -31,17 +31,16 @@ Hermes connects the lab, TrueNAS hosts applications and data, and Prometheus run
 | Local AI | Open WebUI on TrueNAS, connected to Strata on Prometheus |
 | Supporting services | Caddy, code-server, SearXNG, and qBittorrent with Gluetun/PIA |
 
-The [service guide](docs/setup/services.md) covers dependencies, clients, and links to all 15 Compose stacks. The [decisions and lessons](docs/history/decisions-and-lessons.md) explain the hardware reuse, storage design, and subscriptions this setup replaces.
+The [service guide](docs/services.md) covers dependencies, clients, and links to all 15 Compose stacks. The [decisions and lessons](docs/decisions-and-lessons.md) explain the hardware reuse, storage design, and subscriptions this setup replaces.
 
 ## Documentation
 
-[All my notes are here](docs/README.md): the hardware and network, the apps I use, backups, troubleshooting, and how the lab got to this point.
+My notes cover the setup, maintenance, benchmarks, and the changes I made along the way.
 
-## Current status
-
-The storage migration, three-network setup, and phone HTTPS access are working. Prometheus startup after reboot was checked during the earlier Q2_0 setup. Six recorded AI benchmark runs passed their sanity checks; [Coder IQ1_M is the latest baseline](docs/setup/local-ai.md#performance-reference).
-
-The November 4–5 handoff confirmed local snapshots and daily PostgreSQL backup/retention jobs. Initial snapshots and manual backups for all five databases worked, but unattended execution, expired-set pruning, and a full restore test remain unverified. Email alerts and an offsite copy aren't set up. The [backup notes](docs/operations/backups.md) explain what is covered.
+- Setup: [Infrastructure](docs/infrastructure.md), [networking](docs/networking.md), [services](docs/services.md), and [local AI](docs/local-ai.md).
+- Maintenance: [Operations](docs/operations.md), [troubleshooting](docs/troubleshooting.md), [backups](docs/backups.md), and [database recovery](docs/postgres-recovery.md).
+- Benchmarks: [Comparisons and tuning](docs/benchmarks.md), plus my [original Q2_0 run](docs/q2-benchmark.md).
+- Background: [Decisions and lessons](docs/decisions-and-lessons.md) and [migration history](docs/migrations.md).
 
 ## Hardware gallery
 

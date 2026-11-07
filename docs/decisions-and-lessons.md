@@ -1,6 +1,6 @@
 # Decisions and lessons
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
 I built this around services I actually use, hardware I already had, and a setup I could understand and maintain. These are the choices that shaped it and the lessons I took from working on it. The [migration notes](migrations.md) cover the actual moves.
 
@@ -37,7 +37,7 @@ I keep apps and storage on TrueNAS and model inference on Prometheus.
 
 I converted the gaming PC I already owned into a TrueNAS host: more RAM, mirrored data drives, a 2.5 GbE NIC, and no discrete GPU. The original SSD became the boot drive. This made useful storage infrastructure without replacing the whole machine.
 
-Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. [Benchmark comparisons](../setup/local-ai.md#performance-reference) led to a Coder IQ1_M baseline with RAM-resident experts and substantially lower long-prompt latency than Q2_0. All six recorded runs passed twelve sanity checks; model and residency changed together, so the measurements do not isolate one cause or establish broad answer quality.
+Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. I switched to Coder IQ1_M with RAM-resident experts after getting substantially lower long-prompt latency in my [benchmark comparisons](local-ai.md#performance-reference). All six runs passed twelve sanity checks, but I changed the model and residency together, so I can’t isolate one cause or draw broad conclusions about answer quality.
 
 ### Keep configuration editable and deployment visible
 
@@ -88,7 +88,7 @@ When Jellyfin's HTTPS connection failed, it happened before an HTTP request coul
 
 On Prometheus, I found that Docker could list the desired port binding without actually publishing the port. The model could be healthy while its host API was unreachable. Recreating the container restored publication, and I added a systemd startup unit. Startup after reboot now works.
 
-The [troubleshooting guide](../operations/troubleshooting.md) includes diagnostic commands for both incidents and distinguishes confirmed symptoms from suspected causes.
+The [troubleshooting guide](troubleshooting.md) includes diagnostic commands for both incidents and distinguishes confirmed symptoms from suspected causes.
 
 ### Prefer simple, persistent tooling
 
@@ -100,4 +100,4 @@ I keep private keys and credential values outside Git and review the actual diff
 
 My earlier household-wide AdGuard filtering got in the way of family use, so I narrowed it to my own devices through Tailscale at that stage. Both services are now retired. That taught me to account for other users and provide practical exceptions.
 
-The original eero-to-switch link also showed why a faster server NIC and switch don't prove throughput across the whole connection. The eero is now retired. Its old bottleneck and individual link speeds don't establish current capacity; that takes a measurement. The [network notes](../setup/networking.md) show the current layout.
+The original eero-to-switch link also showed why a faster server NIC and switch don't prove throughput across the whole connection. The eero is now retired. Its old bottleneck and individual link speeds don't establish current capacity; that takes a measurement. The [network notes](networking.md) show the current layout.

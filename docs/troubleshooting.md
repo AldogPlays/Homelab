@@ -1,6 +1,6 @@
 # Troubleshooting
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
 These are problems I ran into while setting up and migrating the lab, along with the checks I used. Check which shell a command belongs in and confirm the current container names before using it.
 
@@ -9,7 +9,7 @@ These are problems I ran into while setting up and migrating the lab, along with
 
 ## Caddy route present on host but missing in container
 
-Jellyfin worked through its HTTP port, but I got `SSL_ERROR_INTERNAL_ERROR_ALERT` over private HTTPS. Caddy reported unchanged configuration on reload even though the editor showed the new route.
+Jellyfin worked through its HTTP port, but I got `SSL_ERROR_INTERNAL_ERROR_ALERT` over private HTTPS. I got an unchanged-configuration message from Caddy on reload even though my editor showed the new route.
 
 The host and editor had the route, but the container did not. A stale file bind after an editor save was a suspected cause, not a proven one. HTTPS was restored, but I didn't record the exact fix. Preserve Caddy's existing data, configuration, and CA state; only the public root certificate belongs on clients.
 
@@ -36,7 +36,7 @@ Use `grep -n` on the host/editor if `rg` is unavailable.
 
 ### Interpret the result
 
-During the incident, the host and editor contained the route while the container did not. Caddy was bound to an individual file, as it remains in the [Compose definition](../../caddy/compose.yaml).
+During the incident, the host and editor contained the route while the container did not. Caddy was bound to an individual file, as it remains in the [Compose definition](../caddy/compose.yaml).
 
 An editor save that replaces the host file may leave the single-file bind attached to old contents. That was the suspected cause here, but it was not proven. HTTPS was restored; the exact fix is not documented. Check host and container contents before choosing a remedy, and preserve Caddy's data and configuration.
 
@@ -55,12 +55,12 @@ A successful syntax check does not prove the file contains the intended route. P
 
 ## Nextcloud untrusted domain
 
-After the LAN address changed, direct access at `http://10.10.10.10:30027` showed **Access through untrusted domain**. The November 3 repair updated the allowed hosts and CLI URL; the recorded settings and checks are below.
+After I changed the LAN address, Nextcloud showed **Access through untrusted domain** at `http://10.10.10.10:30027`. On November 3, I fixed it by updating the allowed hosts and CLI URL.
 
 <details>
-<summary>Recorded settings and read-only checks</summary>
+<summary>The settings I changed and how I check them</summary>
 
-| Runtime setting | Confirmed value after repair |
+| Runtime setting | Value I set |
 | --- | --- |
 | `trusted_domains` | `nextcloud.home.arpa`, `10.10.10.10:30027` |
 | `overwrite.cli.url` | `https://nextcloud.home.arpa` |
@@ -78,13 +78,13 @@ sudo docker exec -u www-data ix-nextcloud-nextcloud-1 \
   php /var/www/html/occ config:system:get overwrite.cli.url
 ```
 
-The recorded status was Nextcloud `35.0.2`, installed, with maintenance mode off and no database upgrade needed. An authenticated dashboard at the direct IP confirmed the allowed-host repair. That HTTP check did not verify DNS, TLS, or the proxy; private HTTPS phone access was verified separately, as recorded in [networking](../setup/networking.md#local-and-remote-service-access).
+I checked Nextcloud `35.0.2`: it was installed, maintenance mode was off, and no database upgrade was needed. I could then open my authenticated dashboard at the direct IP. That HTTP check didn’t test DNS, TLS, or the proxy; I checked private HTTPS access from my phone separately in my [network notes](networking.md#local-and-remote-service-access).
 
 </details>
 
 ## Open WebUI startup: connection refused
 
-During the initial deployment, Compose validation passed while `http://10.10.10.10:30070/health` still refused connections. Later, two requests returned `{"status":true}` and the application was confirmed working. The initial refusal alone did not establish a bad Compose definition or a backend-model failure.
+When I first deployed Open WebUI, Compose validation passed but `http://10.10.10.10:30070/health` still refused connections. Later, I got `{"status":true}` twice and could use the app. The initial refusal alone didn’t tell me whether the problem was the Compose file, initialization, or the model backend.
 
 <details>
 <summary>Startup checks and persistent state</summary>
@@ -99,7 +99,7 @@ sudo ss -ltn | grep ':30070 '
 curl -fsS --max-time 10 http://10.10.10.10:30070/health
 ```
 
-Check deployment state and allow initialization to complete before repeating the health request. Compose validation establishes configuration validity; a successful health response establishes WebUI availability. Test its connection to Strata separately using the [local AI guide](../setup/local-ai.md#serving-layout).
+Check deployment state and allow initialization to complete before repeating the health request. Compose validation establishes configuration validity; a successful health response establishes WebUI availability. Test its connection to Strata separately using the [local AI guide](local-ai.md#serving-layout).
 
 Persistent backend data is under `/mnt/tank/appdata/open-webui/data`. Preserve the existing `WEBUI_SECRET_KEY` in `/mnt/tank/appdata/open-webui/secrets/open-webui.env`; setup verified a root-owned mode `600` file in a mode `700` secrets directory.
 
@@ -111,14 +111,14 @@ My browser shell timed out during the Audiobookshelf move, leaving an incomplete
 
 For a long transfer, run it in a persistent session and verify that the transfer itself is inside that session. After a disconnect, inspect the process and destination before launching another copy. A final incremental run can transfer only a small fraction of the total library; its percentage is not a complete migration check.
 
-Preserve application-referenced container paths while changing host storage. Audiobookshelf's old-looking internal library path is deliberate; see [the migration details](../history/migrations.md#audiobookshelf-preserve-the-container-path).
+Preserve application-referenced container paths while changing host storage. Audiobookshelf's old-looking internal library path is deliberate; see [the migration details](migrations.md#audiobookshelf-preserve-the-container-path).
 
 ## Storage permissions
 
-UID and GID are the numeric user and group IDs used for filesystem access. The recorded identities are:
+UID and GID are the numeric user and group IDs used for filesystem access. These are the identities I used:
 
 <details>
-<summary>Recorded service identities</summary>
+<summary>Service identities</summary>
 
 | Service | UID:GID |
 | --- | --- |
@@ -165,7 +165,7 @@ sudo journalctl -u strata-compose.service -b --no-pager -n 60
 curl -fsS --max-time 10 http://10.10.10.20:8080/health
 ```
 
-### Recorded resolution and limits
+### What fixed it and what I haven’t tested
 
 Recreating the container restored the published port. The systemd unit now waits for the Ethernet address and runs Compose with `--force-recreate`. A manual service start, health request, and startup after reboot have all succeeded. The unit lives at `/etc/systemd/system/strata-compose.service` on Prometheus.
 
@@ -179,4 +179,4 @@ When I first used Open WebUI, some replies appeared late even though the backend
 
 The useful comparison is when the backend finishes versus when the answer becomes visible. Reasoning and tool activity can come before the final answer, so those timings need separating before blaming model generation or changing the serving configuration.
 
-The [benchmark timing definitions](../benchmarks/q2-0.md#how-to-read-the-timings) explain first-token versus first-answer latency; those measurements bypass Open WebUI and cannot diagnose a browser delay on their own.
+The [benchmark timing definitions](q2-benchmark.md#how-to-read-the-timings) explain first-token versus first-answer latency; those measurements bypass Open WebUI and cannot diagnose a browser delay on their own.

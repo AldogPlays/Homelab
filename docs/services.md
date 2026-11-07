@@ -1,30 +1,30 @@
 # Services and clients
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
-These are the 15 app stacks I run on TrueNAS and the clients I use with them. Each app name links to its Compose file. Those files hold the image versions, ports, mounts, and service identities—the users and groups the containers run as. The [Caddyfile](../../caddy/Caddyfile) holds the web names and proxy routes.
+These are the 15 app stacks I run on TrueNAS and the clients I use with them. Each app name links to its Compose file. Those files hold the image versions, ports, mounts, and service identities—the users and groups the containers run as. The [Caddyfile](../caddy/Caddyfile) holds the web names and proxy routes.
 
-My [network notes](networking.md#local-and-remote-service-access) cover HTTPS, DNS, and remote access. The [operations notes](../operations/README.md) cover deployment and checks.
+My [network notes](networking.md#local-and-remote-service-access) cover HTTPS, DNS, and remote access. The [operations notes](operations.md) cover deployment and checks.
 
 ## Personal cloud
 
 | Service | What I use it for |
 | --- | --- |
-| [Nextcloud](../../nextcloud/compose.yaml) | Files, calendar, contacts, and bookmarks |
-| [Immich](../../immich/compose.yaml) | Photo and video archive |
-| [Vaultwarden](../../vaultwarden/compose.yaml) | Password vault |
-| [Joplin Server](../../joplin/compose.yaml) | Notes synchronization |
-| [Actual Budget](../../actual-budget/compose.yaml) | Budgeting with SimpleFIN imports |
-| [LubeLogger](../../lubelogger/compose.yaml) | Truck maintenance, modifications, and fuel |
+| [Nextcloud](../nextcloud/compose.yaml) | Files, calendar, contacts, and bookmarks |
+| [Immich](../immich/compose.yaml) | Photo and video archive |
+| [Vaultwarden](../vaultwarden/compose.yaml) | Password vault |
+| [Joplin Server](../joplin/compose.yaml) | Notes synchronization |
+| [Actual Budget](../actual-budget/compose.yaml) | Budgeting with SimpleFIN imports |
+| [LubeLogger](../lubelogger/compose.yaml) | Truck maintenance, modifications, and fuel |
 
 ## Media and games
 
 | Service | What I use it for |
 | --- | --- |
-| [Jellyfin](../../jellyfin/compose.yaml) | Movies and TV |
-| [Audiobookshelf](../../audiobookshelf/compose.yaml) | Purchased audiobook library |
-| [Navidrome](../../navidrome/compose.yaml) | Music library |
-| [Crafty 4](../../crafty-4/compose.yaml) | Minecraft server management |
+| [Jellyfin](../jellyfin/compose.yaml) | Movies and TV |
+| [Audiobookshelf](../audiobookshelf/compose.yaml) | Purchased audiobook library |
+| [Navidrome](../navidrome/compose.yaml) | Music library |
+| [Crafty 4](../crafty-4/compose.yaml) | Minecraft server management |
 
 Jellyfin and qBittorrent are separate working stacks. I don't run an *Arr media-automation stack such as Sonarr or Radarr.
 
@@ -32,11 +32,11 @@ Jellyfin and qBittorrent are separate working stacks. I don't run an *Arr media-
 
 | Service | What I use it for |
 | --- | --- |
-| [Caddy](../../caddy/compose.yaml) | Private HTTPS reverse proxy |
-| [code-server](../../code-server/compose.yaml) | Browser editor and Git workspace |
-| [Open WebUI](../../open-webui/compose.yaml) | Browser interface to local models |
-| [SearXNG](../../searxng/compose.yaml) | Metasearch |
-| [qBittorrent + Gluetun](../../qbittorrent/compose.yaml) | Downloads through PIA |
+| [Caddy](../caddy/compose.yaml) | Private HTTPS reverse proxy |
+| [code-server](../code-server/compose.yaml) | Browser editor and Git workspace |
+| [Open WebUI](../open-webui/compose.yaml) | Browser interface to local models |
+| [SearXNG](../searxng/compose.yaml) | Metasearch |
+| [qBittorrent + Gluetun](../qbittorrent/compose.yaml) | Downloads through PIA |
 
 ## Clients and everyday use
 
@@ -54,7 +54,7 @@ Jellyfin and qBittorrent are separate working stacks. I don't run an *Arr media-
 
 I use these mobile clients on GrapheneOS/Android. I've verified Immich, Bitwarden, and DAVx5 through the private HTTPS names.
 
-Actual Budget's [bank-sync script](../../actual-budget/scripts/actual-bank-sync.sh) reads externally supplied credentials and runs daily at midnight as root. I haven't verified Fidelity/SimpleFIN compatibility.
+Actual Budget's [bank-sync script](../actual-budget/scripts/actual-bank-sync.sh) reads externally supplied credentials and runs daily at midnight as root. I haven't verified Fidelity/SimpleFIN compatibility.
 
 ## Media storage
 
@@ -72,7 +72,7 @@ These host paths are beneath `/mnt/tank`:
 | `data/media` | Jellyfin `/media`, read-only |
 | `data/media/torrents` | qBittorrent `/data/torrents` |
 
-Audiobookshelf's internal path is intentional: changing it can invalidate stored library references. It does not depend on the retired host dataset. See [the migration](../history/migrations.md#audiobookshelf-preserve-the-container-path).
+Audiobookshelf's internal path is intentional: changing it can invalidate stored library references. It does not depend on the retired host dataset. See [the migration](migrations.md#audiobookshelf-preserve-the-container-path).
 
 The media directories share one ZFS filesystem. Hardlinks let a download and a library entry refer to the same stored file without keeping a second copy; they cannot cross filesystem boundaries. That requires ordinary directories in the same filesystem, including movie, TV, or torrent paths used this way. qBittorrent currently mounts only the torrents directory; a shared container `/data` layout and hardlink imports are not configured or verified here.
 
@@ -110,21 +110,21 @@ I keep app state and secrets outside Git. The [media mounts](#media-storage) and
 
 | Service | State and dependencies |
 | --- | --- |
-| [Nextcloud](../../nextcloud/compose.yaml) | PostgreSQL 17, Valkey, cron, and a [custom FFmpeg image](../../nextcloud/Dockerfile); user files in `data/files` |
-| [Immich](../../immich/compose.yaml) | PostgreSQL/VectorChord, Valkey, and OpenVINO machine learning; media in `data/photos` |
-| [Vaultwarden](../../vaultwarden/compose.yaml) | PostgreSQL and persistent vault data |
-| [Joplin Server](../../joplin/compose.yaml) | PostgreSQL; Joplin clients sync here |
-| [Actual Budget](../../actual-budget/compose.yaml) | Persistent application state and a scheduled bank-sync job |
-| [LubeLogger](../../lubelogger/compose.yaml) | PostgreSQL, application files, and data-protection keys |
-| [Jellyfin](../../jellyfin/compose.yaml) | Application state and read-only shared media |
-| [Audiobookshelf](../../audiobookshelf/compose.yaml) | Configuration/metadata and shared audiobooks |
-| [Navidrome](../../navidrome/compose.yaml) | Application state and read-only shared music |
-| [Crafty 4](../../crafty-4/compose.yaml) | Configuration, servers, imports, logs, and backups in appdata |
-| [Caddy](../../caddy/compose.yaml) | Persistent CA/runtime state and the repository Caddyfile |
-| [code-server](../../code-server/compose.yaml) | Persistent editor state; repository mounted at `/workspace` |
-| [Open WebUI](../../open-webui/compose.yaml) | Persistent backend data; Strata runs on [Prometheus](local-ai.md); Ollama integration disabled in source |
-| [SearXNG](../../searxng/compose.yaml) | External settings and cache |
-| [qBittorrent + Gluetun](../../qbittorrent/compose.yaml) | Shared network namespace, VPN port forwarding, and torrent storage |
+| [Nextcloud](../nextcloud/compose.yaml) | PostgreSQL 17, Valkey, cron, and a [custom FFmpeg image](../nextcloud/Dockerfile); user files in `data/files` |
+| [Immich](../immich/compose.yaml) | PostgreSQL/VectorChord, Valkey, and OpenVINO machine learning; media in `data/photos` |
+| [Vaultwarden](../vaultwarden/compose.yaml) | PostgreSQL and persistent vault data |
+| [Joplin Server](../joplin/compose.yaml) | PostgreSQL; Joplin clients sync here |
+| [Actual Budget](../actual-budget/compose.yaml) | Persistent application state and a scheduled bank-sync job |
+| [LubeLogger](../lubelogger/compose.yaml) | PostgreSQL, application files, and data-protection keys |
+| [Jellyfin](../jellyfin/compose.yaml) | Application state and read-only shared media |
+| [Audiobookshelf](../audiobookshelf/compose.yaml) | Configuration/metadata and shared audiobooks |
+| [Navidrome](../navidrome/compose.yaml) | Application state and read-only shared music |
+| [Crafty 4](../crafty-4/compose.yaml) | Configuration, servers, imports, logs, and backups in appdata |
+| [Caddy](../caddy/compose.yaml) | Persistent CA/runtime state and the repository Caddyfile |
+| [code-server](../code-server/compose.yaml) | Persistent editor state; repository mounted at `/workspace` |
+| [Open WebUI](../open-webui/compose.yaml) | Persistent backend data; Strata runs on [Prometheus](local-ai.md); Ollama integration disabled in source |
+| [SearXNG](../searxng/compose.yaml) | External settings and cache |
+| [qBittorrent + Gluetun](../qbittorrent/compose.yaml) | Shared network namespace, VPN port forwarding, and torrent storage |
 
 ### State and external configuration
 

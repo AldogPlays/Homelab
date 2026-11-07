@@ -1,13 +1,13 @@
 # Backups and snapshots
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
 I use two kinds of local recovery:
 
 - **ZFS snapshots** preserve filesystem state at a point in time, providing earlier versions of files.
 - **PostgreSQL exports** are archives of database contents that PostgreSQL tools can restore into a database instance.
 
-Snapshot and backup setup was verified on November 4, 2026; the handoff through November 5 also confirmed retention setup. Schedules use America/Los_Angeles; backup-directory timestamps ending in `Z` use UTC.
+I set up snapshots and PostgreSQL backups on November 4, 2026, then added retention during the November 4–5 work. Schedules use America/Los_Angeles; backup-directory timestamps ending in `Z` use UTC.
 
 > [!IMPORTANT]
 > Both are stored locally on `tank`. Neither provides a copy that survives loss of that pool.
@@ -17,11 +17,11 @@ Snapshot and backup setup was verified on November 4, 2026; the handoff through 
 | Layer | Purpose | Verification status |
 | --- | --- | --- |
 | Mirrored data drives | Survive a single data-drive failure | Configured; does not provide file history or an independent copy |
-| ZFS snapshots | Recover earlier filesystem state | First hourly snapshots observed; daily, weekly, and monthly runs unverified |
-| PostgreSQL exports | Recover application databases | Manual run produced all five sets; unattended execution and expired-set pruning unverified |
+| ZFS snapshots | Recover earlier filesystem state | I checked the first hourly snapshots; daily, weekly, and monthly runs still need checking |
+| PostgreSQL exports | Recover application databases | My manual run produced all five sets; I haven’t checked unattended runs or expired-set pruning |
 | Independent backup | Recover after loss of the pool or host | No offsite copy |
 
-The full restore test was explicitly deferred, and no temporary restore-test app was deployed. Email alerts remain unverified. The [recovery notes](postgres-recovery.md) cover inspecting a backup and restoring it into a separate test instance.
+I put off the full restore test and didn’t deploy the temporary test app. I haven’t tested email alerts. The [recovery notes](postgres-recovery.md) cover inspecting a backup and restoring it into a separate test instance.
 
 ## Snapshot policy
 
@@ -71,11 +71,11 @@ A newly created snapshot can show `USED 0B` before changes cause it to retain bl
 
 ### Coverage gaps
 
-The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives in appdata and is covered there. A daily backup-dataset snapshot around 04:30 with seven-day retention was proposed, but was not confirmed as enabled.
+The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives in appdata and is covered there. I considered a daily 04:30 snapshot of the backup dataset with seven-day retention, but I haven’t verified that it is enabled.
 
 ## PostgreSQL logical backups
 
-My [backup script](../../scripts/postgres-backup.sh) exports the databases for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. The [recovery notes](postgres-recovery.md) list the containers, version requirements, integrity checks, and manual restore procedure. These exports can contain sensitive role password hashes.
+My [backup script](../scripts/postgres-backup.sh) exports the databases for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. The [recovery notes](postgres-recovery.md) list the containers, version requirements, integrity checks, and manual restore procedure. These exports can contain sensitive role password hashes.
 
 <details>
 <summary>Database backup jobs and archive format</summary>
@@ -84,10 +84,10 @@ My [backup script](../../scripts/postgres-backup.sh) exports the databases for N
 | --- | --- |
 | Backup command | `/mnt/tank/backups/bin/postgres-backup.sh` |
 | Backup schedule | Daily, 03:15, as root |
-| Backup cron identity at setup | ID `2`, `PostgreSQL Database Backups` |
+| Backup cron job | ID `2`, `PostgreSQL Database Backups` |
 | Retention command | `/mnt/tank/backups/bin/postgres-retention.sh --delete` |
 | Retention schedule | Daily, 04:15, as root |
-| Retention cron identity at setup | ID `3`, `PostgreSQL Backup Retention` |
+| Retention cron job | ID `3`, `PostgreSQL Backup Retention` |
 | Cron output settings | Hide stdout; leave stderr visible |
 | Versioned sources | Repository `scripts/` directory |
 | Backup root | `/mnt/tank/backups/databases` |
@@ -124,27 +124,27 @@ Reading the archive and checking hashes do not prove that a full application res
 
 ### Execution status
 
-The manual five-app run succeeded, and both cron jobs are enabled. Unattended execution remains unverified.
+My manual five-app run succeeded, and I enabled both cron jobs. I haven’t verified unattended execution.
 
 <details>
-<summary>Verification record and one-off archives</summary>
+<summary>What I checked and the one-off backups I kept</summary>
 
-The following results come from the conversation export through November 5, rather than a fresh audit of the host:
+Here’s what I checked during setup:
 
-| Check | Observed result | Limit |
+| Check | What I got | What I still need to test |
 | --- | --- | --- |
 | Initial Nextcloud export, November 4 at 15:44 Pacific | `manual-20261104-154425.dump`, about 3.8 MiB; export and archive rendering exited `0` | One database archive, outside the three-file set format |
 | Five-app manual backup run | All five sets succeeded at `20261105T002105Z` (November 4, 16:21:05 Pacific), including archive rendering and checksum checks | No full database or application restore |
-| Backup and retention schedules | Both enabled in middleware; retention command included `--delete` | No unattended-run results supplied |
+| Backup and retention schedules | Both enabled in middleware; retention command included `--delete` | I haven’t checked an unattended run |
 | Initial retention dry run | `Finished: --dry-run; eligible backup sets: 0` | No expired-set deletion exercised |
 
-One-off migration archives were also observed under appdata: `immich/backups/pre-migration.sql.gz`, `nextcloud/backups/pre-migration.dump`, `nextcloud/backups/cutover-20261103-090936.dump`, and `vaultwarden/backups/pre-migration.dump`. Their removal was not reported. They and the manual Nextcloud dump are outside daily retention; check their existence and integrity before relying on them.
+I also found one-off migration archives under appdata: `immich/backups/pre-migration.sql.gz`, `nextcloud/backups/pre-migration.dump`, `nextcloud/backups/cutover-20261103-090936.dump`, and `vaultwarden/backups/pre-migration.dump`. These and my manual Nextcloud dump sit outside daily retention. I need to check that they are still present and intact before relying on them.
 
 </details>
 
 ## Retention
 
-My [retention script](../../scripts/postgres-retention.sh) targets completed sets older than 30 days while keeping at least the three newest structurally complete sets per app. It defaults to a dry run; deletion requires `--delete`.
+My [retention script](../scripts/postgres-retention.sh) targets completed sets older than 30 days while keeping at least the three newest structurally complete sets per app. It defaults to a dry run; deletion requires `--delete`.
 
 <details>
 <summary>Retention rules and exclusions</summary>
@@ -193,7 +193,7 @@ sudo find /mnt/tank/backups/databases -mindepth 3 -maxdepth 3 \
 
 Use the [runbook's checksum and archive checks](postgres-recovery.md#find-a-backup-read-only) on a selected set. A backup-directory listing alone does not prove integrity or execution by cron.
 
-Installation and initial runs were confirmed, but the installed retention script was not printed back or byte-compared with its source. If checking for source/install drift, compare without executing either script:
+I installed and ran the scripts, but haven’t compared the installed retention copy byte for byte with its source. I can compare both source/install pairs without executing either script:
 
 ```bash
 # TrueNAS host

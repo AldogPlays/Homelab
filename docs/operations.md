@@ -1,6 +1,6 @@
 # Operations
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
 These are my notes for checking apps, working in the right shell, and deploying an approved change. Each command says where it runs. The container names are examples, so check them against the running setup.
 
@@ -21,7 +21,7 @@ These are my notes for checking apps, working in the right shell, and deploying 
 | Open WebUI shows replies late | [Compare backend and browser timing](troubleshooting.md#open-webui-replies-appear-late) |
 | Recover a database | [PostgreSQL recovery](postgres-recovery.md) |
 
-Use [backups](backups.md#check-the-setup) to check protection jobs and [networking](../setup/networking.md) for the address/DNS reference.
+Use [backups](backups.md#check-the-setup) to check protection jobs and [networking](networking.md) for the address/DNS reference.
 
 ## Find the right path
 
@@ -101,7 +101,7 @@ I keep documentation edits separate from deployment work. Changing Compose, Dock
 4. Deploy through TrueNAS, then verify application behavior and persistence.
 5. For migrations, retain the previous state until the replacement is verified.
 
-The `tank/Apps` migration is complete, and that dataset has been deleted. Use current backups for recovery. The [migration history](../history/migrations.md) describes what was retained, reset, and retired.
+The `tank/Apps` migration is complete, and that dataset has been deleted. Use current backups for recovery. The [migration history](migrations.md) describes what was retained, reset, and retired.
 
 </details>
 

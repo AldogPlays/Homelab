@@ -1,10 +1,10 @@
 # Migration history
 
-> [Homelab](../../README.md) · [Documentation](../README.md)
+> [Homelab](../README.md)
 
 In late October and early November 2026, I moved the lab from application-specific storage under `tank/Apps` to Git-managed Compose definitions, separate application state, and shared user-data datasets. TrueNAS continued to manage the application lifecycle.
 
-These are the moves I've completed, including the network and AI-host changes. The [hardware](../setup/infrastructure.md), [network](../setup/networking.md), and [service notes](../setup/services.md) describe the current setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
+These are the moves I've completed, including the network and AI-host changes. The [hardware](infrastructure.md), [network](networking.md), and [service notes](services.md) describe the current setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
 
 ## Milestones
 
@@ -19,7 +19,7 @@ These are the moves I've completed, including the network and AI-host changes. T
 
 ## Deployment and storage refactor
 
-I separated the versioned definitions, app state, and user data. That [storage layout](../setup/infrastructure.md#storage-layout) is still what I use.
+I separated the versioned definitions, app state, and user data. That [storage layout](infrastructure.md#storage-layout) is still what I use.
 
 I deployed the apps through TrueNAS **Install via YAML**, loading their Compose files from the repository. I could edit and version the configuration while keeping deployment and app management in TrueNAS. Each app directory stayed at the repository root because another `stacks/` directory inside the repo would have changed the existing include paths.
 
@@ -55,7 +55,7 @@ Host source:           /mnt/tank/data/media/audiobooks
 Container destination: /mnt/tank/Apps/audiobookshelf/audiobooks
 ```
 
-The old-looking destination is intentional and remains in the [Compose source](../../audiobookshelf/compose.yaml). It does not mount the retired host `tank/Apps` dataset. Changing that destination would require coordinating Audiobookshelf's stored library references.
+The old-looking destination is intentional and remains in the [Compose source](../audiobookshelf/compose.yaml). It does not mount the retired host `tank/Apps` dataset. Changing that destination would require coordinating Audiobookshelf's stored library references.
 
 The initial media transfer stopped when the browser shell timed out. Inspection showed no remaining `rsync` process and an incomplete destination. An incremental copy resumed the transfer, followed by state comparisons and access checks. Its progress percentage described that incremental run, not the completeness of the entire migration.
 
@@ -75,7 +75,7 @@ Those checks covered routing, forwarding, and storage access. They did not estab
 
 Direct access on the new LAN initially produced an untrusted-domain error. Updating allowed hosts and the CLI URL for the new address and private HTTPS name restored access to the authenticated dashboard.
 
-The verified allowed hosts were `nextcloud.home.arpa` and `10.10.10.10:30027`, with `overwrite.cli.url` set to `https://nextcloud.home.arpa`. The former LAN and Tailscale entries were removed. [Troubleshooting](../operations/troubleshooting.md#nextcloud-untrusted-domain) records the checks and the distinction between direct-HTTP and later HTTPS evidence.
+The verified allowed hosts were `nextcloud.home.arpa` and `10.10.10.10:30027`, with `overwrite.cli.url` set to `https://nextcloud.home.arpa`. The former LAN and Tailscale entries were removed. [Troubleshooting](troubleshooting.md#nextcloud-untrusted-domain) records the checks and the distinction between direct-HTTP and later HTTPS evidence.
 
 DAVx5 setup was also resolved. It now works on my phone through the private HTTPS URL; the precise authorization fix and contact-group setting are not documented.
 
@@ -85,7 +85,7 @@ DAVx5 setup was also resolved. It now works on my phone through the private HTTP
 
 Caddy's internal CA provided private HTTPS, with local DNS names standardized on application names such as `actual-budget.home.arpa` and `navidrome.home.arpa`. Purpose-based labels such as Budget and Music were used for bookmarks. Earlier aliases such as `code.home.arpa` and `search.home.arpa` were superseded.
 
-Jellyfin exposed a useful troubleshooting case: direct HTTP worked, but HTTPS failed during the TLS handshake. The host's Caddyfile contained the route while the container's file did not. A stale single-file bind mount after an editor save was suspected, but the mechanism was not proven. HTTPS was restored; the exact fix is not documented. See [operations](../operations/troubleshooting.md#caddy-route-present-on-host-but-missing-in-container) for the diagnostic sequence.
+Jellyfin exposed a useful troubleshooting case: direct HTTP worked, but HTTPS failed during the TLS handshake. The host's Caddyfile contained the route while the container's file did not. A stale single-file bind mount after an editor save was suspected, but the mechanism was not proven. HTTPS was restored; the exact fix is not documented. See [operations](troubleshooting.md#caddy-route-present-on-host-but-missing-in-container) for the diagnostic sequence.
 
 ## Retiring legacy storage
 
@@ -96,17 +96,17 @@ On November 3, I retired the legacy `tank/Apps` dataset after the app moves. Bef
 - Textual references in the Compose repository.
 - Explicit decisions to discard old Jellyfin media and old Crafty backups.
 
-The remaining Compose reference was Audiobookshelf's container destination, not a host dependency. Subsequent `zfs list tank/Apps` reported that the dataset did not exist, and all 14 installed apps in the accompanying middleware query remained `RUNNING`.
+The remaining Compose reference was Audiobookshelf's container destination, not a host dependency. I checked `zfs list tank/Apps` afterward and got “dataset does not exist.” All 14 installed apps were still `RUNNING` in my middleware query.
 
 Some reclaimed space had been retained by legacy snapshots, explaining why ZFS `USED` figures had exceeded file-level `du` totals. File-level deletion and pool-level space reclamation were separate checks.
 
-Immediately afterward, `zpool list tank` reported `ONLINE`, with `978G` allocated and `4.50T` free on the `5.45T` pool. These are historical post-retirement figures. The final deletion command was not preserved in the handoff; completion is established by the dataset-absence check and accompanying app-state query.
+Right after the cleanup, I checked `zpool list tank`: the `5.45T` pool was `ONLINE`, with `978G` allocated and `4.50T` free. I also checked that the old dataset was gone and the apps were still running.
 
 ## Networking and service changes
 
 I replaced the eero with Hermes, the Flint 2 running OpenWrt, set up the trusted, IoT, and guest networks, and switched remote access to WireGuard. I no longer use Tailscale, AdGuard Home, File Browser, Jackett, or FlareSolverr.
 
-I moved Joplin sync from Nextcloud to Joplin Server and verified Immich, Bitwarden, and DAVx5 over private HTTPS on my phone. The [network notes](../setup/networking.md) have the current connection details.
+I moved Joplin sync from Nextcloud to Joplin Server and verified Immich, Bitwarden, and DAVx5 over private HTTPS on my phone. The [network notes](networking.md) have the current connection details.
 
 ## Prometheus: move to Ubuntu
 
@@ -117,7 +117,7 @@ I moved Prometheus from Windows to bare-metal Ubuntu Server in early November 20
 
 ### CPU threads
 
-Simultaneous multithreading (SMT) lets a CPU core expose more than one hardware thread. Linux initially exposed eight threads with SMT reported as `notsupported`, despite no explicit `nosmt` kernel option. A BIOS change restored eight cores / sixteen threads and SMT `on`. Gigabyte X3D Turbo Mode was suspected, but the exact responsible setting was not established.
+Simultaneous multithreading (SMT) lets a CPU core expose more than one hardware thread. I initially saw only eight threads in Linux and SMT set to `notsupported`, despite no explicit `nosmt` kernel option. After a BIOS change, I had eight cores / sixteen threads and SMT `on`. I suspected Gigabyte X3D Turbo Mode, but didn’t isolate the responsible setting.
 
 ### Ethernet and routing
 
@@ -125,9 +125,9 @@ Ethernet initially had link without IPv4 DHCP configured in Netplan. Enabling DH
 
 ### Container startup
 
-Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](../operations/troubleshooting.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
+Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](troubleshooting.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
 
-The resulting Q2_0 setup completed the [original standard benchmark](../benchmarks/q2-0.md). Later comparisons covered another Q2_0 run, a fresh restart, and three Coder IQ1_M configurations. Coder with `KV=int8`, `spec=4`, and RAM-resident experts became the latest recorded baseline. Quick and thorough tuning retained those settings; no full standard run after thorough tuning was shown. The [benchmark history](../benchmarks/README.md) preserves the results and limits.
+The resulting Q2_0 setup completed the [original standard benchmark](q2-benchmark.md). Later comparisons covered another Q2_0 run, a fresh restart, and three Coder IQ1_M configurations. I settled on Coder with `KV=int8`, `spec=4`, and RAM-resident experts. I kept those settings after quick and thorough tuning, but haven’t repeated the full standard suite since thorough tuning. The [benchmark history](benchmarks.md) preserves the results and limits.
 
 </details>
 
@@ -135,6 +135,4 @@ The resulting Q2_0 setup completed the [original standard benchmark](../benchmar
 
 On November 4, I enabled ten periodic snapshot tasks and saw the first hourly snapshots. I then added PostgreSQL-native logical backups for Nextcloud, Immich, Vaultwarden, Joplin, and LubeLogger. A manual run produced all five sets successfully, and I configured the backup and retention cron jobs afterward.
 
-The proposed temporary restore-test app and offsite work were deferred. These protect data locally on `tank`. I haven't configured email alerts, made an offsite copy, or completed a full restore test. My [backup notes](../operations/backups.md) have the coverage, schedules, and verification steps.
-
-Migration and backup details were reconciled with `HOMELAB_CONVERSATION_TECHNICAL_EXPORT.md`, covering conversation evidence through November 5, 2026. That export records observations and proposals at the time; it does not supersede later networking/AI evidence or establish current live state.
+I put off the temporary restore-test app and offsite work. These protect data locally on `tank`. I haven't configured email alerts, made an offsite copy, or completed a full restore test. My [backup notes](backups.md) have the coverage, schedules, and verification steps.
