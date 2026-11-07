@@ -13,17 +13,17 @@ flowchart TD
     Hermes --- IoT["IoT network"]
     Hermes --- Guest["Guest network"]
     Trusted --- NAS["TrueNAS"]
-    Trusted --- AI["Prometheus"]
+    Trusted --- Gaming["Prometheus"]
 
     classDef host fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e
     classDef router fill:#dcfce7,stroke:#16a34a,color:#14532d
-    class NAS,AI host
+    class NAS,Gaming host
     class Hermes router
 ```
 
 This shows how the networks fit together, rather than the physical wiring. I haven't documented the switch-port assignments or detailed firewall rules between networks. Printer and TV-to-Jellyfin access requirements, including device addresses, network placement, and the required firewall rules, are also not documented here.
 
-Prometheus prefers Ethernet over Wi-Fi. Its Strata API is bound to the Ethernet address, so Wi-Fi fallback alone does not make that API available over Wi-Fi.
+Prometheus currently prefers Ethernet over Wi-Fi. These are the last recorded Ubuntu settings; its planned gaming OS has not been installed.
 
 <details>
 <summary>Addresses, ports, and routing</summary>
@@ -42,7 +42,7 @@ Prometheus prefers Ethernet over Wi-Fi. Its Strata API is bound to the Ethernet 
 
 ### Ethernet preference and Wi-Fi fallback
 
-Prometheus uses lower route metrics to prefer Ethernet (100) over Wi-Fi (600) when both routes are available. This routing preference is separate from where a service listens: Strata's host API is bound to the reserved Ethernet address, so Wi-Fi fallback alone does not establish API availability through Wi-Fi.
+The recorded Ubuntu configuration uses lower route metrics to prefer Ethernet (100) over Wi-Fi (600) when both routes are available. These host settings do not automatically carry over to Windows.
 
 The Prometheus Ethernet link negotiated 2.5 Gb/s full duplex. I haven't measured end-to-end throughput; the link speed and fiber service alone don't establish it.
 

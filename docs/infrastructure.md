@@ -2,7 +2,7 @@
 
 > [Homelab](../README.md)
 
-I use TrueNAS for applications and storage, a separate Ubuntu machine for local AI, and Hermes, a GL.iNet Flint 2 running OpenWrt, as the main router.
+I use TrueNAS for applications and storage, and Hermes, a GL.iNet Flint 2 running OpenWrt, as the main router. Prometheus is a separate PC being repurposed for game streaming.
 
 The hardware and storage details are below. My [network notes](networking.md) cover addresses and access, and [operations](operations.md) has the commands I use to inspect the setup.
 
@@ -102,25 +102,26 @@ The [permissions procedure](troubleshooting.md#storage-permissions) explains how
 
 The mirror protects against a single data-drive failure. [Backups and snapshots](backups.md) covers local history, database exports, exclusions, and recovery limits.
 
-## Prometheus AI host
+## Prometheus
 
-Prometheus is my separate Ubuntu AI machine, with a Ryzen 7 7800X3D, an RX 7800 XT, and 32 GB of DDR5 RAM.
+Prometheus is the PC I moved to the living room. I plan to use Windows 11 with Sunshine on it and Moonlight on my desk device, keeping my existing USB-C/Thunderbolt setup. I chose Windows because I want to play Battlefield 6. I want a minimal installation with unwanted apps and background clutter removed.
+
+The target is a 120 FPS stream to a 120 Hz display. That is a goal, not a measured result or a promise that every game will render at 120 FPS. The Windows installation and streaming setup are still pending; I have not recorded the client, monitor resolution, or dock limits yet.
 
 <details>
 <summary>Prometheus hardware and storage</summary>
 
 | Component | Configuration |
 | --- | --- |
-| Host / OS | `prometheus`, Ubuntu Server 26.04.1 LTS |
+| Host / last recorded OS | `prometheus`, Ubuntu Server 26.04.1 LTS; Windows migration pending |
 | CPU | AMD Ryzen 7 7800X3D, 8 cores / 16 threads |
 | Motherboard | Gigabyte B650I AORUS ULTRA |
 | GPU | PowerColor Radeon RX 7800 XT, 16 GiB VRAM; AMD integrated graphics also present |
 | RAM / swap | 32 GB DDR5, about 29 GiB usable; 8 GiB swap |
-| Storage | Approximately 2 TB NVMe (`SHPP41-2000GM`); 100 GB root logical volume (LV) and 1 TB ext4 AI-data LV |
-| AI storage mount | `/srv/ai`, on `/dev/ubuntu-vg/ai-data`; I checked the mount after reboots |
+| Storage | Approximately 2 TB NVMe (`SHPP41-2000GM`); existing Ubuntu partition layout has not been changed |
 | Ethernet | Intel I225-V, `igc`, `enp13s0`, negotiated 2.5 Gb/s full duplex |
 
 </details>
 
 
-Strata runs in Docker with AMD device access; Open WebUI on TrueNAS connects to it across the LAN. The [local AI guide](local-ai.md) covers model settings, startup, and a benchmark summary, with [full results](benchmarks.md) on a separate page. Ethernet preference and Wi-Fi fallback are documented in [networking](networking.md#network-layout).
+The [retirement notes](migrations.md#local-ai-retirement) separate repository cleanup from outstanding host and data removal. The last recorded Ethernet preference and Wi-Fi fallback are documented in [networking](networking.md#network-layout); those OS settings will need revisiting after a Windows installation.

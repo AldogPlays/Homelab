@@ -2,7 +2,9 @@
 
 > [Homelab](../README.md)
 
-These are the 15 app stacks I run on TrueNAS and the clients I use with them. Each app name links to its Compose file. Those files hold the image versions, ports, mounts, and service identities—the users and groups the containers run as. The [Caddyfile](../caddy/Caddyfile) holds the web names and proxy routes.
+I keep 13 TrueNAS app stacks in this repository. This page covers what I use them for and the clients I connect with. Each app name links to its Compose file. Those files hold the image versions, ports, mounts, and service identities—the users and groups the containers run as. The [Caddyfile](../caddy/Caddyfile) holds the web names and proxy routes.
+
+Open WebUI, LiteLLM, and SearXNG have been removed from TrueNAS and this repository. The [retirement notes](migrations.md#local-ai-retirement) track the remaining DNS, proxy, and Prometheus cleanup.
 
 My [network notes](networking.md#local-and-remote-service-access) cover HTTPS, DNS, and remote access. The [operations notes](operations.md) cover deployment and checks.
 
@@ -34,8 +36,6 @@ Jellyfin and qBittorrent are separate working stacks. I don't run an *Arr media-
 | --- | --- |
 | [Caddy](../caddy/compose.yaml) | Private HTTPS reverse proxy |
 | [code-server](../code-server/compose.yaml) | Browser editor and Git workspace |
-| [Open WebUI](../open-webui/compose.yaml) | Browser interface to local models |
-| [SearXNG](../searxng/compose.yaml) | Metasearch |
 | [qBittorrent + Gluetun](../qbittorrent/compose.yaml) | Downloads through PIA |
 
 ## Clients and everyday use
@@ -122,8 +122,6 @@ I keep app state and secrets outside Git. The [media mounts](#media-storage) and
 | [Crafty 4](../crafty-4/compose.yaml) | Configuration, servers, imports, logs, and backups in appdata |
 | [Caddy](../caddy/compose.yaml) | Persistent CA/runtime state and the repository Caddyfile |
 | [code-server](../code-server/compose.yaml) | Persistent editor state; repository mounted at `/workspace` |
-| [Open WebUI](../open-webui/compose.yaml) | Persistent backend data; Strata runs on [Prometheus](local-ai.md); Ollama integration disabled in source |
-| [SearXNG](../searxng/compose.yaml) | External settings and cache |
 | [qBittorrent + Gluetun](../qbittorrent/compose.yaml) | Shared network namespace, VPN port forwarding, and torrent storage |
 
 ### State and external configuration

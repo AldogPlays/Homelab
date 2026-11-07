@@ -71,6 +71,8 @@ A newly created snapshot can show `USED 0B` before changes cause it to retain bl
 
 ### Coverage gaps
 
+Open WebUI, LiteLLM, and SearXNG were removed from TrueNAS. Deletion of their appdata datasets and snapshots has not been confirmed; repository cleanup does not remove either. The [retirement notes](migrations.md#local-ai-retirement) list the locations to check. Prometheus storage remains outside the TrueNAS snapshot policy.
+
 The policy excludes `tank/data/games` and does not cover `tank/backups`. Crafty server content lives in appdata and is covered there. I considered a daily 04:30 snapshot of the backup dataset with seven-day retention, but I haven’t verified that it is enabled.
 
 ## PostgreSQL logical backups

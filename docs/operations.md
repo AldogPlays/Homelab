@@ -13,13 +13,12 @@ These are my notes for checking apps, working in the right shell, and deploying 
 | Prepare and deploy a change | [Deployment workflow](#deployment-workflow) |
 | Caddy cannot see an edited route | [Compare host and container files](troubleshooting.md#caddy-route-present-on-host-but-missing-in-container) |
 | Nextcloud rejects a hostname or IP | [Check allowed hosts](troubleshooting.md#nextcloud-untrusted-domain) |
-| Open WebUI refuses connections after deployment | [Check startup](troubleshooting.md#open-webui-startup-connection-refused) |
 | A long media transfer stopped | [Interrupted media copy](troubleshooting.md#interrupted-media-copy) |
 | An application cannot access its files | [Storage permissions](troubleshooting.md#storage-permissions) |
 | Git authentication fails | [Git authentication](#git-authentication) |
-| Strata is healthy but its API is unreachable | [Prometheus diagnostics](troubleshooting.md#prometheus-healthy-container-unreachable-api) |
-| Open WebUI shows replies late | [Compare backend and browser timing](troubleshooting.md#open-webui-replies-appear-late) |
 | Recover a database | [PostgreSQL recovery](postgres-recovery.md) |
+
+The [retirement checklist](migrations.md#local-ai-retirement) tracks the remaining DNS, proxy, storage, and Prometheus work after removing the AI apps.
 
 Use [backups](backups.md#check-the-setup) to check protection jobs and [networking](networking.md) for the address/DNS reference.
 
@@ -30,7 +29,6 @@ Use [backups](backups.md#check-the-setup) to check protection jobs and [networki
 | TrueNAS host | `/mnt/tank/stacks` | `/mnt/tank/appdata/<app>` |
 | code-server | `/workspace` | Its own persistent state is `/config` |
 | Caddy container | Caddyfile at `/etc/caddy/Caddyfile` | `/data` and `/config` |
-| Prometheus AI host | Strata Compose at `/srv/ai/strata/compose.yaml` | `/srv/ai/strata/data` |
 
 A host path and a container path can name the same underlying files differently. For example, `/mnt/tank/stacks/caddy/Caddyfile` on TrueNAS appears as `/workspace/caddy/Caddyfile` in code-server and `/etc/caddy/Caddyfile` in Caddy.
 

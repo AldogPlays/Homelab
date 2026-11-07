@@ -10,12 +10,6 @@ code-server.home.arpa {
     reverse_proxy http://10.10.10.10:32443
 }
 
-searxng.home.arpa {
-    tls internal
-
-    reverse_proxy http://10.10.10.10:34053
-}
-
 qbittorrent.home.arpa {
     tls internal
 
@@ -105,10 +99,4 @@ nextcloud.home.arpa {
     redir @dav /remote.php/dav/ 301
 
     reverse_proxy 10.10.10.10:30027
-}
-
-open-webui.home.arpa {
-    tls internal
-
-    reverse_proxy 10.10.10.10:30070
 }

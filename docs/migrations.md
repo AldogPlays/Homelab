@@ -4,7 +4,7 @@
 
 In late October and early November 2026, I moved the lab from application-specific storage under `tank/Apps` to Git-managed Compose definitions, separate application state, and shared user-data datasets. TrueNAS continued to manage the application lifecycle.
 
-These are the moves I've completed, including the network and AI-host changes. The [hardware](infrastructure.md), [network](networking.md), and [service notes](services.md) describe the current setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
+These notes cover completed moves and the explicitly marked retirement work still in progress. The [hardware](infrastructure.md), [network](networking.md), and [service notes](services.md) describe the current setup. Some November 5 UTC timestamps fall on November 4 in Pacific time.
 
 ## Milestones
 
@@ -14,8 +14,7 @@ These are the moves I've completed, including the network and AI-host changes. T
 | November 3 | Deleted the legacy `tank/Apps` dataset after dependency checks |
 | Early November | Replaced the eero with Hermes and moved Prometheus from Windows to Ubuntu |
 | November 4–5 | Added snapshot policies and daily PostgreSQL backup/retention jobs |
-| November 4 Pacific / November 5 UTC | Completed the standard Q2_0 benchmark |
-| By November 6 | Compared six standard AI runs and retained Coder IQ1_M with RAM-resident experts as the baseline |
+| November 6–7 | Removed Open WebUI, LiteLLM, and SearXNG from TrueNAS and the repository; DNS/proxy cleanup and the Prometheus gaming conversion remain pending |
 
 ## Deployment and storage refactor
 
@@ -34,7 +33,7 @@ I kept the app data I needed and deliberately started fresh where I didn't need 
 
 | Application | Approach | Outcome |
 | --- | --- | --- |
-| SearXNG | Fresh installation; old unused settings were disposable | Replacement service working |
+| SearXNG | Fresh installation during the storage refactor | Subsequently removed during local-AI retirement |
 | qBittorrent | Fresh torrent state and settings, retaining Gluetun/PIA and dynamic port forwarding | Matching VPN egress, forwarded listening port, VPN interface, and scoped storage access verified; save path corrected |
 | Actual Budget | Stopped the old app, copied its state, compared source and destination, checked service-user access | Existing budget worked in the replacement |
 | Audiobookshelf | Moved books to shared media and copied configuration/metadata | Existing library, artwork, and playback history visible |
@@ -42,7 +41,6 @@ I kept the app data I needed and deliberately started fresh where I didn't need 
 | Jellyfin | Fresh installation, deliberately omitting old users, libraries, settings, and history | First-run setup completed; direct HTTP and later private HTTPS worked |
 | Crafty 4 | Retained server content; deliberately omitted old backups | Replacement server storage present; old backups were not transferred |
 | Nextcloud, Immich, Vaultwarden, Joplin, LubeLogger | Moved to the new application/user-data layout | Host mounts pointed to the new paths and all apps remained running after legacy storage retirement |
-| Open WebUI | Added after the main application moves | Health endpoint returned `{"status":true}` |
 
 ### Audiobookshelf: preserve the container path
 
@@ -113,7 +111,7 @@ I moved Joplin sync from Nextcloud to Joplin Server and verified Immich, Bitward
 I moved Prometheus from Windows to bare-metal Ubuntu Server in early November 2026. I mounted a dedicated ext4 logical volume (LV) at `/srv/ai` for model and runtime data.
 
 <details>
-<summary>CPU threads, Ethernet, and startup fixes</summary>
+<summary>CPU threads and Ethernet fixes</summary>
 
 ### CPU threads
 
@@ -123,11 +121,30 @@ Simultaneous multithreading (SMT) lets a CPU core expose more than one hardware 
 
 Ethernet initially had link without IPv4 DHCP configured in Netplan. Enabling DHCP and moving the reserved address to Ethernet restored access. Route metrics were then adjusted to prefer Ethernet while retaining Wi-Fi fallback.
 
-### Container startup
+The AI serving configuration and benchmark pages were removed during the retirement below. The host has not been reinstalled as part of the repository cleanup.
 
-Strata sometimes lost active port publication during the network/reboot work. Recreation restored it, and a systemd unit was added to wait for Ethernet and recreate the container. Startup after reboot was tested successfully; [operations](troubleshooting.md#prometheus-healthy-container-unreachable-api) preserves the diagnostic sequence.
+</details>
 
-The resulting Q2_0 setup completed the [original standard benchmark](q2-benchmark.md). Later comparisons covered another Q2_0 run, a fresh restart, and three Coder IQ1_M configurations. I settled on Coder with `KV=int8`, `spec=4`, and RAM-resident experts. I kept those settings after quick and thorough tuning, but haven’t repeated the full standard suite since thorough tuning. The [benchmark history](benchmarks.md) preserves the results and limits.
+## Local AI retirement
+
+I wanted local AI to replace my everyday assistant for assignments and other work. Long waits for answers and unreliable tool execution made the setup unsuitable for that job. I decided to retire it and use Prometheus for [game streaming](infrastructure.md#prometheus), keeping my existing desk setup.
+
+I removed Open WebUI, LiteLLM, and SearXNG through TrueNAS app management, then removed their repository directories and Caddy site blocks. The dedicated AI setup and benchmark pages are also removed. The remaining service inventory contains 13 Compose stacks.
+
+<details>
+<summary>Runtime cleanup still pending</summary>
+
+The three apps are removed from TrueNAS. I still need to confirm that Caddy has loaded the edited configuration and the old DNS entries are gone from Hermes. This cleanup has not changed Prometheus or its stored data. I have not confirmed deletion of the TrueNAS appdata datasets or snapshots.
+
+| Location | Remaining work |
+| --- | --- |
+| Caddy | Validate and load the edited Caddyfile; preserve the existing CA and other routes |
+| Hermes | Remove the retired `open-webui.home.arpa`, `litellm.home.arpa`, and `searxng.home.arpa` host entries if explicitly configured; preserve other aliases and the TrueNAS/Prometheus reservations |
+| TrueNAS storage | Confirm whether `/mnt/tank/appdata/open-webui`, `/mnt/tank/appdata/litellm`, and `/mnt/tank/appdata/searxng` and their snapshots were deleted; app removal alone does not establish this |
+| Prometheus startup | Disable the host's `strata-compose.service` and remove the Strata and `cpu-llm` Compose deployments before repurposing the host |
+| Prometheus storage | Decide what to retain from `/srv/ai/strata` and `/srv/ai/cpu-llm` before deleting data or reinstalling the OS |
+
+The removed TrueNAS apps used includes pointing to repository Compose files that no longer exist. Stored chats, uploaded files, databases, keys, and model files belong outside Git; their retention or deletion must be checked on the hosts. Disk formatting for Windows is separate from this repository change.
 
 </details>
 

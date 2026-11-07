@@ -33,11 +33,11 @@ The annual figures are 12 monthly payments. These are avoided subscription costs
 
 ### Reuse hardware, separate workloads
 
-I keep apps and storage on TrueNAS and model inference on Prometheus.
+I keep apps and storage on TrueNAS. Prometheus is being repurposed for gaming.
 
 I converted the gaming PC I already owned into a TrueNAS host: more RAM, mirrored data drives, a 2.5 GbE NIC, and no discrete GPU. The original SSD became the boot drive. This made useful storage infrastructure without replacing the whole machine.
 
-Prometheus is a separate AMD machine for GPU-heavy model inference. Open WebUI runs with the other applications on TrueNAS, while Strata serves models from Prometheus. I switched to Coder IQ1_M with RAM-resident experts after getting substantially lower long-prompt latency in my [benchmark comparisons](local-ai.md#performance-reference). All six runs passed twelve sanity checks, but I changed the model and residency together, so I can’t isolate one cause or draw broad conclusions about answer quality.
+I tried using Prometheus for local AI, but the latency and unreliable tool behavior did not meet my needs for everyday work and assignments. I chose to retire that setup and plan game streaming from the same PC, keeping my single-cable desk. Running a model successfully was not enough to make it a useful replacement for my daily assistant. The [retirement notes](migrations.md#local-ai-retirement) track what has and has not been removed.
 
 ### Keep configuration editable and deployment visible
 
@@ -86,9 +86,7 @@ Hardlinks need the downloader and library paths to share one filesystem. Being o
 
 When Jellyfin's HTTPS connection failed, it happened before an HTTP request could reach Jellyfin. I found the route in the host file and editor, but Caddy's container could not see it. That confirmed stale container-visible configuration. An editor save leaving a stale file bind was a possible explanation, not a proven cause.
 
-On Prometheus, I found that Docker could list the desired port binding without actually publishing the port. The model could be healthy while its host API was unreachable. Recreating the container restored publication, and I added a systemd startup unit. Startup after reboot now works.
-
-The [troubleshooting guide](troubleshooting.md) includes diagnostic commands for both incidents and distinguishes confirmed symptoms from suspected causes.
+The [troubleshooting guide](troubleshooting.md) includes the Caddy diagnostic commands and distinguishes confirmed symptoms from suspected causes.
 
 ### Prefer simple, persistent tooling
 

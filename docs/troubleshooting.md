@@ -5,7 +5,7 @@
 These are problems I ran into while setting up and migrating the lab, along with the checks I used. Check which shell a command belongs in and confirm the current container names before using it.
 
 > [!NOTE]
-> These are past incidents, not a list of current outages. I've kept the uncertain causes and missing details explicit.
+> These notes include past incidents and explicitly marked unresolved checks. I've kept the uncertain causes and missing details explicit.
 
 ## Caddy route present on host but missing in container
 
@@ -82,29 +82,6 @@ I checked Nextcloud `35.0.2`: it was installed, maintenance mode was off, and no
 
 </details>
 
-## Open WebUI startup: connection refused
-
-When I first deployed Open WebUI, Compose validation passed but `http://10.10.10.10:30070/health` still refused connections. Later, I got `{"status":true}` twice and could use the app. The initial refusal alone didn’t tell me whether the problem was the Compose file, initialization, or the model backend.
-
-<details>
-<summary>Startup checks and persistent state</summary>
-
-Read-only checks on the **TrueNAS host**:
-
-```bash
-sudo docker compose -f /mnt/tank/stacks/open-webui/compose.yaml config --quiet
-sudo docker ps -a --filter name=ix-open-webui \
-  --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
-sudo ss -ltn | grep ':30070 '
-curl -fsS --max-time 10 http://10.10.10.10:30070/health
-```
-
-Check deployment state and allow initialization to complete before repeating the health request. Compose validation establishes configuration validity; a successful health response establishes WebUI availability. Test its connection to Strata separately using the [local AI guide](local-ai.md#serving-layout).
-
-Persistent backend data is under `/mnt/tank/appdata/open-webui/data`. Preserve the existing `WEBUI_SECRET_KEY` in `/mnt/tank/appdata/open-webui/secrets/open-webui.env`; setup verified a root-owned mode `600` file in a mode `700` secrets directory.
-
-</details>
-
 ## Interrupted media copy
 
 My browser shell timed out during the Audiobookshelf move, leaving an incomplete destination and no `rsync` process running. I resumed it with an incremental `rsync` and compared the copied app state afterward.
@@ -136,47 +113,3 @@ Check the current Compose source and running identity rather than applying one o
 POSIX ownership and mode output alone did not explain all effective access because datasets could have ACLs. Check access as the application's actual identity, including relevant supplementary groups. A successful test on a directory establishes only that directory's access, not every nested file's permissions.
 
 A qBittorrent migration issue combined an incorrect save path with insufficient directory access. Both needed correction. Check the host-to-container mapping, application save path, and service-user access together.
-
-## Prometheus: healthy container, unreachable API
-
-Strata was healthy inside Docker, but `docker port strata` showed no active port publication and the host health URL refused connections.
-
-Port publication is Docker's mapping from a host address/port to a container port. Desired `HostConfig.PortBindings` still listed the expected address, but that configuration alone did not prove the mapping was active.
-
-Recreating the container restored the port, and the systemd startup unit now waits for Ethernet and recreates it. I verified manual startup, the health request, and startup after reboot. Startup ordering and network changes were suspected contributors, not proven causes.
-
-<details>
-<summary>Prometheus checks and what resolved the incident</summary>
-
-### Check the host and container
-
-Read-only checks on **Prometheus**:
-
-```bash
-ip -4 -br addr
-ip -4 route
-findmnt --mountpoint /srv/ai
-sudo docker ps -a --filter name=strata
-sudo docker port strata
-sudo docker inspect strata \
-  --format 'NetworkMode={{.HostConfig.NetworkMode}} PortBindings={{json .HostConfig.PortBindings}}'
-sudo systemctl status strata-compose.service --no-pager
-sudo journalctl -u strata-compose.service -b --no-pager -n 60
-curl -fsS --max-time 10 http://10.10.10.20:8080/health
-```
-
-### What fixed it and what I haven’t tested
-
-Recreating the container restored the published port. The systemd unit now waits for the Ethernet address and runs Compose with `--force-recreate`. A manual service start, health request, and startup after reboot have all succeeded. The unit lives at `/etc/systemd/system/strata-compose.service` on Prometheus.
-
-Startup ordering and network reconfiguration were suspected contributors, not proven root causes. Distinguish a missing port publication from a model still loading: some early checks failed only a few seconds after recreation and passed once the model was ready. Docker process restart policy also does not establish recovery from a process that stays alive but becomes unhealthy.
-
-</details>
-
-## Open WebUI replies appear late
-
-When I first used Open WebUI, some replies appeared late even though the backend requests had finished. I didn't isolate the cause.
-
-The useful comparison is when the backend finishes versus when the answer becomes visible. Reasoning and tool activity can come before the final answer, so those timings need separating before blaming model generation or changing the serving configuration.
-
-The [benchmark timing definitions](q2-benchmark.md#how-to-read-the-timings) explain first-token versus first-answer latency; those measurements bypass Open WebUI and cannot diagnose a browser delay on their own.
